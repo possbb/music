@@ -30,6 +30,8 @@ const prompt = buildPrompt({
   mood: "温暖、轻快、有希望",
   level: "A1 入门",
   length: "约 2 分钟（2 段主歌 + 重复副歌）",
+  languages: ["es", "zh", "en"],
+  languageMode: "aligned",
   keywords: combinedKeywords,
   patterns: combinedPatterns.join("\n"),
   requirements: "副歌使用问答",
@@ -37,5 +39,23 @@ const prompt = buildPrompt({
 
 assert.match(prompt, /Suno/);
 assert.match(prompt, /¿/);
-assert.match(prompt, /只输出西班牙语歌词/);
+assert.match(prompt, /一套歌词逐句多语言对照/);
+assert.match(prompt, /ES:、中文：、EN:/);
+assert.match(prompt, /不得混入未选择的语言/);
+
+const separatePrompt = buildPrompt({
+  topic: "友情",
+  customTopic: "",
+  style: "故事民谣",
+  mood: "温暖",
+  level: "A2 初级",
+  length: "约 3 分钟（完整叙事结构）",
+  languages: ["es", "zh"],
+  languageMode: "separate",
+  keywords: combinedKeywords,
+  patterns: combinedPatterns.join("\n"),
+  requirements: "",
+});
+assert.match(separatePrompt, /分别生成 2 套完整歌词/);
+assert.match(separatePrompt, /不要逐字硬译/);
 console.log(`Combined prompt: ${combinedKeywords.length} keywords, ${combinedPatterns.length} patterns, ${prompt.length} chars`);

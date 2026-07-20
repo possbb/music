@@ -23,6 +23,12 @@ test("renders the Spanish lyric prompt workspace", async () => {
   assert.match(html, /加入教材/);
   assert.match(html, /检查提取结果/);
   assert.match(html, /设定创作方向/);
+  assert.match(html, /歌词语言/);
+  assert.match(html, /西班牙语/);
+  assert.match(html, /中文/);
+  assert.match(html, /英文/);
+  assert.match(html, /分别生成多套/);
+  assert.match(html, /逐句多语言对照/);
   assert.match(html, /复制给大模型/);
   assert.doesNotMatch(html, /codex-preview|react-loading-skeleton|Your site is taking shape/i);
 });

@@ -10,17 +10,17 @@ export async function generateMetadata(): Promise<Metadata> {
 
   return {
     title: "LetraLab｜西班牙语教材歌词提示词生成器",
-    description: "上传西班牙语教材，提取关键词与句型，生成适合 Suno 歌曲创作的歌词提示词。",
+    description: "上传西班牙语教材，提取关键词与句型，生成西班牙语、中文或英文的单语、多套或逐句对照歌词提示词。",
     openGraph: {
       title: "LetraLab｜把课堂句型，变成会唱的西语",
-      description: "从教材中提取关键词与句型，生成西班牙语教学歌曲提示词。",
+      description: "从教材中提取关键词与句型，生成单语言、多套语言或逐句对照的教学歌曲提示词。",
       type: "website",
       images: [{ url: imageUrl, width: 1200, height: 630, alt: "LetraLab 西班牙语教材歌词提示词生成器" }],
     },
     twitter: {
       card: "summary_large_image",
       title: "LetraLab｜把课堂句型，变成会唱的西语",
-      description: "从教材中提取关键词与句型，生成西班牙语教学歌曲提示词。",
+      description: "从教材中提取关键词与句型，生成单语言、多套语言或逐句对照的教学歌曲提示词。",
       images: [imageUrl],
     },
   };
