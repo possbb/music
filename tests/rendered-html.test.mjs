@@ -88,3 +88,13 @@ test("uses compact selects for arrangement, music app, and textbook ratio", asyn
   assert.match(pageSource, /<select value=\{vocabularyRatio\}/);
   assert.doesNotMatch(pageSource, /name="language-mode"|name="target-app"|name="vocabulary-ratio"/);
 });
+
+test("asks the lyric model for copy-friendly Markdown blocks", async () => {
+  const pageSource = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
+  assert.match(pageSource, /【Markdown 输出要求】/);
+  assert.match(pageSource, /## Style of Music/);
+  assert.match(pageSource, /## Udio Prompt/);
+  assert.match(pageSource, /## Music Description/);
+  assert.match(pageSource, /两个独立的 Markdown 围栏代码块/);
+  assert.match(pageSource, /代码块语言标记为 text/);
+});

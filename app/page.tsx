@@ -220,10 +220,10 @@ export function buildPrompt(options: {
       : `只生成一套多语言对照歌词。每个对应句组按“${languageOrder}”顺序逐句排列，各行只写纯歌词，不要添加 ES:、中文：、EN: 或其他语言提示；每个多语言对应句组之间留一个空行。对应行必须表达相同含义。`;
   const targetName = options.targetApp === "generic" ? options.customApp.trim() || "通用 AI 音乐创作应用" : TARGET_APPS.find((item) => item.value === options.targetApp)?.label;
   const appInstruction = {
-    suno: `严格按以下三个区块输出：\n【Title】简短歌名\n【Style of Music】用简洁英文关键词描述曲风、情绪、速度、主要乐器和人声，不写具体艺人姓名\n【Lyrics】带段落标签的完整歌词，可直接粘贴到 Suno Custom 模式`,
-    udio: `严格按以下三个区块输出：\n【Title】简短歌名\n【Udio Prompt】用简洁关键词描述主题、曲风、情绪、速度和乐器\n【Custom Lyrics】使用 [Verse]、[Chorus]、[Bridge] 等 guidance tags；需要时可用圆括号标记和声`,
-    mureka: `严格按以下三个区块输出：\n【Title】简短歌名\n【Music Description】描述曲风、情绪、速度、乐器和人声\n【Lyrics】带清楚段落标签的完整歌词`,
-    generic: `严格按以下三个区块输出：\n【Title】简短歌名\n【Music Style Prompt】可复制到 ${targetName} 的音乐风格描述\n【Lyrics】带清楚段落标签的完整歌词`,
+    suno: `使用以下 Markdown 标题：\n# Title\n## Style of Music\n## Lyrics\nStyle of Music 使用简洁英文关键词描述曲风、情绪、速度、主要乐器和人声，不写具体艺人姓名；Lyrics 带段落标签，可直接粘贴到 Suno Custom 模式。`,
+    udio: `使用以下 Markdown 标题：\n# Title\n## Udio Prompt\n## Custom Lyrics\nUdio Prompt 使用简洁关键词描述主题、曲风、情绪、速度和乐器；Custom Lyrics 使用 [Verse]、[Chorus]、[Bridge] 等 guidance tags，需要时可用圆括号标记和声。`,
+    mureka: `使用以下 Markdown 标题：\n# Title\n## Music Description\n## Lyrics\nMusic Description 描述曲风、情绪、速度、乐器和人声；Lyrics 使用清楚的歌曲段落标签。`,
+    generic: `使用以下 Markdown 标题：\n# Title\n## Music Style Prompt\n## Lyrics\nMusic Style Prompt 是可复制到 ${targetName} 的音乐风格描述；Lyrics 使用清楚的歌曲段落标签。`,
   }[options.targetApp];
 
   return `你是一位擅长语言教学歌曲的多语种作词人。请根据以下西班牙语教材内容，创作可直接用于 ${targetName} 的歌曲素材。
@@ -263,6 +263,12 @@ ${patterns || "- 请围绕主题使用适合初学者的西班牙语完整句子
 8. 可以押韵，但不能为了押韵使用超出 ${options.level} 太多的生僻词。
 9. 不要写歌手姓名或模仿具体在世艺人的风格。
 ${options.requirements.trim() ? `10. 额外要求：${options.requirements.trim()}` : ""}
+
+【Markdown 输出要求】
+- 整份回答必须使用 Markdown，不要添加开场白、结尾说明或表格。
+- 歌名写在一级标题“# Title”下方，使用普通 Markdown 文本。
+- 音乐风格提示和歌词必须分别放入两个独立的 Markdown 围栏代码块，并将代码块语言标记为 text，方便分别复制；不要把整份回答包在同一个代码块中。
+- 如果是分别生成多套语言歌词，每种语言使用独立的三级标题和独立歌词代码块；如果是逐句多语言对照，只使用一个歌词代码块。
 
 【${targetName} 输出格式】
 ${appInstruction}
