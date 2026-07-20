@@ -2,7 +2,9 @@
 
 把西班牙语教材转换为歌词创作提示词的本地网页工具。
 
-在线版本：https://letralab-spanish-songs.possbb.chatgpt.site
+GitHub Pages：https://possbb.github.io/music/
+
+备用在线版本：https://letralab-spanish-songs.possbb.chatgpt.site
 
 ## 功能
 
@@ -29,4 +31,10 @@ npm run dev
 
 ```bash
 npm test
+```
+
+构建 GitHub Pages 静态版本：
+
+```bash
+npm run build:pages
 ```
