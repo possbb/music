@@ -28,6 +28,14 @@ const TARGET_APPS: Array<{ value: TargetApp; label: string; detail: string; mark
 
 export type VocabularyRatio = 20 | 50 | 80;
 
+export type ExtractionScope = "focused" | "expanded" | "comprehensive";
+
+const EXTRACTION_OPTIONS: Array<{ value: ExtractionScope; label: string; detail: string; keywords: number; patterns: number }> = [
+  { value: "focused", label: "重点", detail: "适合短教材", keywords: 40, patterns: 24 },
+  { value: "expanded", label: "丰富", detail: "推荐使用", keywords: 80, patterns: 48 },
+  { value: "comprehensive", label: "全面", detail: "适合长教材", keywords: 160, patterns: 96 },
+];
+
 const VOCABULARY_OPTIONS: Array<{ value: VocabularyRatio; label: string; detail: string }> = [
   { value: 20, label: "较少", detail: "约 20% 来自教材，自由发挥更多" },
   { value: 50, label: "普通", detail: "约 50% 来自教材，创作较均衡" },
@@ -67,6 +75,7 @@ const LENGTH_OPTIONS = [
 const PREFERENCE_STORAGE_KEY = "letralab:creative-options:v1";
 
 type SavedPreferences = {
+  extractionScope: ExtractionScope;
   topic: string;
   customTopic: string;
   style: string;
@@ -87,9 +96,6 @@ const STOP_WORDS = new Set(
   ),
 );
 
-const MAX_EXTRACTED_KEYWORDS = 40;
-const MAX_EXTRACTED_PATTERNS = 24;
-
 const SAMPLE_MATERIAL = `Hola, buenos días. ¿Cómo te llamas? Me llamo Carlos.
 ¿De dónde eres? Soy de China. ¿A qué te dedicas? Soy ingeniero.
 ¿Cuántos años tienes? Tengo treinta y cinco años.
@@ -103,7 +109,7 @@ function normalizeLine(value: string) {
   return value.replace(/[\t\u00a0]+/g, " ").replace(/\s+/g, " ").trim();
 }
 
-export function extractKeywords(text: string) {
+export function extractKeywords(text: string, limit = EXTRACTION_OPTIONS[1].keywords) {
   const counts = new Map<string, number>();
   const preferred = new Set([
     "llamo",
@@ -132,11 +138,11 @@ export function extractKeywords(text: string) {
   return [...counts.entries()]
     .map(([word, count]) => ({ word, score: count * 3 + (preferred.has(word) ? 6 : 0) + Math.min(word.length, 8) / 4 }))
     .sort((a, b) => b.score - a.score || a.word.localeCompare(b.word, "es"))
-    .slice(0, MAX_EXTRACTED_KEYWORDS)
+    .slice(0, limit)
     .map(({ word }) => word);
 }
 
-export function extractPatterns(text: string) {
+export function extractPatterns(text: string, limit = EXTRACTION_OPTIONS[1].patterns) {
   const lines = text
     .split(/\r?\n|•|(?<=[.!?])\s+(?=[A-ZÁÉÍÓÚÜÑ¿])/u)
     .map(normalizeLine)
@@ -158,7 +164,7 @@ export function extractPatterns(text: string) {
     }))
     .filter(({ key }) => key.length > 4 && !seen.has(key) && Boolean(seen.add(key)))
     .sort((a, b) => b.score - a.score || a.line.length - b.line.length)
-    .slice(0, MAX_EXTRACTED_PATTERNS)
+    .slice(0, limit)
     .map(({ line }) => line.replace(/^[-–—]\s*/, ""));
 }
 
@@ -269,6 +275,7 @@ export default function Home() {
   const [manualText, setManualText] = useState("");
   const [keywords, setKeywords] = useState<string[]>([]);
   const [patterns, setPatterns] = useState("");
+  const [extractionScope, setExtractionScope] = useState<ExtractionScope>("expanded");
   const [isReading, setIsReading] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [topic, setTopic] = useState("自我介绍");
@@ -294,6 +301,7 @@ export default function Home() {
       const stored = window.localStorage.getItem(PREFERENCE_STORAGE_KEY);
       if (!stored) return;
       const saved = JSON.parse(stored) as Partial<SavedPreferences>;
+      if (saved.extractionScope && EXTRACTION_OPTIONS.some((item) => item.value === saved.extractionScope)) setExtractionScope(saved.extractionScope);
       if (typeof saved.topic === "string" && TOPICS.includes(saved.topic)) setTopic(saved.topic);
       if (typeof saved.customTopic === "string") setCustomTopic(saved.customTopic);
       if (typeof saved.style === "string" && SONG_STYLES.some((item) => item.value === saved.style)) setStyle(saved.style);
@@ -319,6 +327,7 @@ export default function Home() {
   useEffect(() => {
     if (!preferencesReady) return;
     const preferences: SavedPreferences = {
+      extractionScope,
       topic,
       customTopic,
       style,
@@ -337,7 +346,9 @@ export default function Home() {
     } catch {
       // Private browsing or storage restrictions should not block the app.
     }
-  }, [preferencesReady, topic, customTopic, style, mood, level, length, languages, languageMode, targetApp, customApp, vocabularyRatio, requirements]);
+  }, [preferencesReady, extractionScope, topic, customTopic, style, mood, level, length, languages, languageMode, targetApp, customApp, vocabularyRatio, requirements]);
+
+  const activeExtractionOption = EXTRACTION_OPTIONS.find((item) => item.value === extractionScope) ?? EXTRACTION_OPTIONS[1];
 
   const stats = useMemo(
     () => ({
@@ -348,11 +359,17 @@ export default function Home() {
     [sourceText, manualText, keywords, patterns],
   );
 
-  function analyze(text: string) {
+  function analyze(text: string, scope = extractionScope) {
     const clean = text.trim();
-    setKeywords(extractKeywords(clean));
-    setPatterns(extractPatterns(clean).join("\n"));
+    const limits = EXTRACTION_OPTIONS.find((item) => item.value === scope) ?? EXTRACTION_OPTIONS[1];
+    setKeywords(extractKeywords(clean, limits.keywords));
+    setPatterns(extractPatterns(clean, limits.patterns).join("\n"));
     setGenerated("");
+  }
+
+  function changeExtractionScope(scope: ExtractionScope) {
+    setExtractionScope(scope);
+    analyze([sourceText, manualText].filter(Boolean).join("\n"), scope);
   }
 
   async function handleFiles(selected: File[]) {
@@ -494,8 +511,21 @@ export default function Home() {
               <div className="statline"><span>{stats.chars.toLocaleString()} 字符</span><span>{stats.keywordCount} 关键词</span><span>{stats.patternCount} 句型</span></div>
             </div>
 
+            <div className="result-block extraction-level">
+              <div className="block-title"><h3>提取数量</h3><span>切换后立即重新提取</span></div>
+              <div className="extraction-options">
+                {EXTRACTION_OPTIONS.map((item) => (
+                  <label className={extractionScope === item.value ? "selected" : ""} key={item.value}>
+                    <input type="radio" name="extraction-scope" value={item.value} checked={extractionScope === item.value} onChange={() => changeExtractionScope(item.value)} />
+                    <span><b>{item.label}</b><small>{item.detail}</small></span>
+                    <em>{item.keywords} 词 / {item.patterns} 句</em>
+                  </label>
+                ))}
+              </div>
+            </div>
+
             <div className="result-block">
-              <div className="block-title"><h3>核心关键词</h3><span>最多提取 {MAX_EXTRACTED_KEYWORDS} 个，点击 × 可删除</span></div>
+              <div className="block-title"><h3>核心关键词</h3><span>最多提取 {activeExtractionOption.keywords} 个，点击 × 可删除</span></div>
               {keywords.length ? (
                 <div className="chips">
                   {keywords.map((keyword) => (
@@ -508,7 +538,7 @@ export default function Home() {
             </div>
 
             <div className="result-block">
-              <div className="block-title"><h3>可复用句型</h3><span>最多提取 {MAX_EXTRACTED_PATTERNS} 句，可直接编辑</span></div>
+              <div className="block-title"><h3>可复用句型</h3><span>最多提取 {activeExtractionOption.patterns} 句，可直接编辑</span></div>
               <textarea className="pattern-textarea" value={patterns} onChange={(event) => setPatterns(event.target.value)} placeholder="例如：¿Cómo te llamas? / Me llamo [名字]." />
             </div>
           </article>
