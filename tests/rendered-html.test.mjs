@@ -52,3 +52,13 @@ test("defaults textbook usage to 80 percent", async () => {
   const pageSource = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
   assert.match(pageSource, /useState<VocabularyRatio>\(80\)/);
 });
+
+test("persists creative options without storing textbook files", async () => {
+  const pageSource = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
+  assert.match(pageSource, /letralab:creative-options:v1/);
+  assert.match(pageSource, /localStorage\.getItem/);
+  assert.match(pageSource, /localStorage\.setItem/);
+  assert.match(pageSource, /SavedPreferences/);
+  assert.doesNotMatch(pageSource, /const preferences: SavedPreferences = \{[^}]*\bsourceText\b/);
+  assert.doesNotMatch(pageSource, /const preferences: SavedPreferences = \{[^}]*\bmanualText\b/);
+});

@@ -1,6 +1,6 @@
 "use client";
 
-import { ChangeEvent, DragEvent, useMemo, useRef, useState } from "react";
+import { ChangeEvent, DragEvent, useEffect, useMemo, useRef, useState } from "react";
 import * as mammoth from "mammoth";
 
 type MaterialFile = {
@@ -54,6 +54,32 @@ const TOPICS = [
   "爱情与回忆",
   "自定义主题",
 ];
+
+const LENGTH_OPTIONS = [
+  "约 1 分钟（短歌 + 循环副歌）",
+  "约 2 分钟（2 段主歌 + 重复副歌）",
+  "约 3 分钟（完整叙事结构）",
+  "约 4 分钟（3 段主歌 + 桥段 + 完整副歌）",
+  "约 5 分钟（长篇故事 + 多次副歌变化）",
+  "约 6 分钟（多章节长歌 + 完整起承转合）",
+];
+
+const PREFERENCE_STORAGE_KEY = "letralab:creative-options:v1";
+
+type SavedPreferences = {
+  topic: string;
+  customTopic: string;
+  style: string;
+  mood: string;
+  level: string;
+  length: string;
+  languages: LyricLanguage[];
+  languageMode: "separate" | "aligned";
+  targetApp: TargetApp;
+  customApp: string;
+  vocabularyRatio: VocabularyRatio;
+  requirements: string;
+};
 
 const STOP_WORDS = new Set(
   `a al algo algunas algunos ante antes como con contra cual cuando de del desde donde dos el ella ellas ellos en entre era es esa ese eso esta estas este estos fue ha hay la las lo los más me mi mis mucha mucho muy no nos o otra para pero por porque que qué se si sin sobre son su sus te tu tus un una uno unas unos ya y yo tú usted ustedes él también cómo cuál dónde quién años english español clase notas alumnos alumnas respuesta pregunta ejemplo práctica recordar objetivo modelo fácil ayuda idea grupo frase palabra palabras número números ejercicio repaso tarea nota`.split(
@@ -256,8 +282,59 @@ export default function Home() {
   const [requirements, setRequirements] = useState("");
   const [generated, setGenerated] = useState("");
   const [copied, setCopied] = useState(false);
+  const [preferencesReady, setPreferencesReady] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const outputRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    try {
+      const stored = window.localStorage.getItem(PREFERENCE_STORAGE_KEY);
+      if (!stored) return;
+      const saved = JSON.parse(stored) as Partial<SavedPreferences>;
+      if (typeof saved.topic === "string" && TOPICS.includes(saved.topic)) setTopic(saved.topic);
+      if (typeof saved.customTopic === "string") setCustomTopic(saved.customTopic);
+      if (typeof saved.style === "string" && SONG_STYLES.some((item) => item.value === saved.style)) setStyle(saved.style);
+      if (typeof saved.mood === "string") setMood(saved.mood);
+      if (typeof saved.level === "string" && ["A1 入门", "A2 初级", "B1 中级"].includes(saved.level)) setLevel(saved.level);
+      if (typeof saved.length === "string" && LENGTH_OPTIONS.includes(saved.length)) setLength(saved.length);
+      if (Array.isArray(saved.languages)) {
+        const validLanguages = LANGUAGE_OPTIONS.map((item) => item.value).filter((language) => saved.languages?.includes(language));
+        if (validLanguages.length) setLanguages(validLanguages);
+      }
+      if (saved.languageMode === "separate" || saved.languageMode === "aligned") setLanguageMode(saved.languageMode);
+      if (saved.targetApp && TARGET_APPS.some((item) => item.value === saved.targetApp)) setTargetApp(saved.targetApp);
+      if (typeof saved.customApp === "string") setCustomApp(saved.customApp);
+      if (saved.vocabularyRatio === 20 || saved.vocabularyRatio === 50 || saved.vocabularyRatio === 80) setVocabularyRatio(saved.vocabularyRatio);
+      if (typeof saved.requirements === "string") setRequirements(saved.requirements);
+    } catch {
+      // Ignore unavailable or invalid browser storage and keep safe defaults.
+    } finally {
+      setPreferencesReady(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!preferencesReady) return;
+    const preferences: SavedPreferences = {
+      topic,
+      customTopic,
+      style,
+      mood,
+      level,
+      length,
+      languages,
+      languageMode,
+      targetApp,
+      customApp,
+      vocabularyRatio,
+      requirements,
+    };
+    try {
+      window.localStorage.setItem(PREFERENCE_STORAGE_KEY, JSON.stringify(preferences));
+    } catch {
+      // Private browsing or storage restrictions should not block the app.
+    }
+  }, [preferencesReady, topic, customTopic, style, mood, level, length, languages, languageMode, targetApp, customApp, vocabularyRatio, requirements]);
 
   const stats = useMemo(
     () => ({
@@ -520,12 +597,7 @@ export default function Home() {
               <label>整体情绪<input value={mood} onChange={(event) => setMood(event.target.value)} /></label>
               <label>歌曲长度
                 <select value={length} onChange={(event) => setLength(event.target.value)}>
-                  <option>约 1 分钟（短歌 + 循环副歌）</option>
-                  <option>约 2 分钟（2 段主歌 + 重复副歌）</option>
-                  <option>约 3 分钟（完整叙事结构）</option>
-                  <option>约 4 分钟（3 段主歌 + 桥段 + 完整副歌）</option>
-                  <option>约 5 分钟（长篇故事 + 多次副歌变化）</option>
-                  <option>约 6 分钟（多章节长歌 + 完整起承转合）</option>
+                  {LENGTH_OPTIONS.map((option) => <option key={option}>{option}</option>)}
                 </select>
               </label>
             </div>
@@ -534,6 +606,7 @@ export default function Home() {
             <button className="primary-button" type="button" onClick={generate} disabled={!stats.chars && !patterns.trim()}>
               生成歌词提示词 <span>→</span>
             </button>
+            <p className="saved-options-note"><i aria-hidden="true">✓</i> 自动记住本机创作选项；教材文件和提取内容不会保存</p>
           </article>
 
           <article className={`panel output-panel ${generated ? "has-output" : ""}`} ref={outputRef}>
