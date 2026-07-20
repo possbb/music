@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 async function render() {
@@ -40,6 +41,14 @@ test("renders the Spanish lyric prompt workspace", async () => {
   assert.match(html, /20%/);
   assert.match(html, /50%/);
   assert.match(html, /80%/);
+  assert.match(html, /4 分钟/);
+  assert.match(html, /5 分钟/);
+  assert.match(html, /6 分钟/);
   assert.match(html, /复制给大模型/);
   assert.doesNotMatch(html, /codex-preview|react-loading-skeleton|Your site is taking shape/i);
+});
+
+test("defaults textbook usage to 80 percent", async () => {
+  const pageSource = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
+  assert.match(pageSource, /useState<VocabularyRatio>\(80\)/);
 });

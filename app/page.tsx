@@ -252,7 +252,7 @@ export default function Home() {
   const [languageMode, setLanguageMode] = useState<"separate" | "aligned">("separate");
   const [targetApp, setTargetApp] = useState<TargetApp>("suno");
   const [customApp, setCustomApp] = useState("");
-  const [vocabularyRatio, setVocabularyRatio] = useState<VocabularyRatio>(50);
+  const [vocabularyRatio, setVocabularyRatio] = useState<VocabularyRatio>(80);
   const [requirements, setRequirements] = useState("");
   const [generated, setGenerated] = useState("");
   const [copied, setCopied] = useState(false);
@@ -519,7 +519,14 @@ export default function Home() {
             <div className="field-grid two">
               <label>整体情绪<input value={mood} onChange={(event) => setMood(event.target.value)} /></label>
               <label>歌曲长度
-                <select value={length} onChange={(event) => setLength(event.target.value)}><option>约 1 分钟（短歌 + 循环副歌）</option><option>约 2 分钟（2 段主歌 + 重复副歌）</option><option>约 3 分钟（完整叙事结构）</option></select>
+                <select value={length} onChange={(event) => setLength(event.target.value)}>
+                  <option>约 1 分钟（短歌 + 循环副歌）</option>
+                  <option>约 2 分钟（2 段主歌 + 重复副歌）</option>
+                  <option>约 3 分钟（完整叙事结构）</option>
+                  <option>约 4 分钟（3 段主歌 + 桥段 + 完整副歌）</option>
+                  <option>约 5 分钟（长篇故事 + 多次副歌变化）</option>
+                  <option>约 6 分钟（多章节长歌 + 完整起承转合）</option>
+                </select>
               </label>
             </div>
             <label className="full-field">额外要求（可选）<textarea value={requirements} onChange={(event) => setRequirements(event.target.value)} placeholder="例如：副歌加入问答；重点练习 R 和 RR 的发音……" /></label>
