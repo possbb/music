@@ -62,3 +62,10 @@ test("persists creative options without storing textbook files", async () => {
   assert.doesNotMatch(pageSource, /const preferences: SavedPreferences = \{[^}]*\bsourceText\b/);
   assert.doesNotMatch(pageSource, /const preferences: SavedPreferences = \{[^}]*\bmanualText\b/);
 });
+
+test("extracts a broader set of textbook terms and patterns", async () => {
+  const pageSource = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
+  assert.match(pageSource, /MAX_EXTRACTED_KEYWORDS = 40/);
+  assert.match(pageSource, /MAX_EXTRACTED_PATTERNS = 24/);
+  assert.match(pageSource, /line\.length >= 8 && line\.length <= 180/);
+});

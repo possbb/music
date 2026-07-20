@@ -87,6 +87,9 @@ const STOP_WORDS = new Set(
   ),
 );
 
+const MAX_EXTRACTED_KEYWORDS = 40;
+const MAX_EXTRACTED_PATTERNS = 24;
+
 const SAMPLE_MATERIAL = `Hola, buenos días. ¿Cómo te llamas? Me llamo Carlos.
 ¿De dónde eres? Soy de China. ¿A qué te dedicas? Soy ingeniero.
 ¿Cuántos años tienes? Tengo treinta y cinco años.
@@ -129,7 +132,7 @@ export function extractKeywords(text: string) {
   return [...counts.entries()]
     .map(([word, count]) => ({ word, score: count * 3 + (preferred.has(word) ? 6 : 0) + Math.min(word.length, 8) / 4 }))
     .sort((a, b) => b.score - a.score || a.word.localeCompare(b.word, "es"))
-    .slice(0, 18)
+    .slice(0, MAX_EXTRACTED_KEYWORDS)
     .map(({ word }) => word);
 }
 
@@ -141,11 +144,11 @@ export function extractPatterns(text: string) {
     .filter(Boolean);
 
   const ignored = /^(objetivo|para recordar|ejercicio|práctica|repaso|nota|grupo|número|español|english|中文|tema|uso|modelo|pregunta|respuesta)/i;
-  const usefulVerb = /\b(me llamo|se llama|soy|eres|es|somos|tengo|tiene|trabajo|trabaja|vivo|vive|quiero|podemos|puedes|nos vemos|hasta luego)\b/i;
+  const usefulVerb = /\b(me llamo|se llama|soy|eres|es|somos|son|estoy|est\u00e1s|est\u00e1|tengo|tienes|tiene|tenemos|trabajo|trabajas|trabaja|vivo|vives|vive|quiero|quieres|quiere|me gusta|te gusta|le gusta|hay|voy|vas|va|puedo|puedes|puede|podemos|necesito|necesitas|prefiero|prefieres|nos vemos|hasta luego)\b/i;
   const seen = new Set<string>();
 
   return lines
-    .filter((line) => line.length >= 10 && line.length <= 125)
+    .filter((line) => line.length >= 8 && line.length <= 180)
     .filter((line) => !/[\u3400-\u9fff]/u.test(line) && !ignored.test(line))
     .map((line) => line.replace(/_{3,}/g, "[信息]").replace(/\s*=\s*[^/]+(?:\/.*)?$/u, ""))
     .map((line) => ({
@@ -155,7 +158,7 @@ export function extractPatterns(text: string) {
     }))
     .filter(({ key }) => key.length > 4 && !seen.has(key) && Boolean(seen.add(key)))
     .sort((a, b) => b.score - a.score || a.line.length - b.line.length)
-    .slice(0, 10)
+    .slice(0, MAX_EXTRACTED_PATTERNS)
     .map(({ line }) => line.replace(/^[-–—]\s*/, ""));
 }
 
@@ -492,7 +495,7 @@ export default function Home() {
             </div>
 
             <div className="result-block">
-              <div className="block-title"><h3>核心关键词</h3><span>点击 × 可删除</span></div>
+              <div className="block-title"><h3>核心关键词</h3><span>最多提取 {MAX_EXTRACTED_KEYWORDS} 个，点击 × 可删除</span></div>
               {keywords.length ? (
                 <div className="chips">
                   {keywords.map((keyword) => (
@@ -505,7 +508,7 @@ export default function Home() {
             </div>
 
             <div className="result-block">
-              <div className="block-title"><h3>可复用句型</h3><span>可直接编辑，每行一句</span></div>
+              <div className="block-title"><h3>可复用句型</h3><span>最多提取 {MAX_EXTRACTED_PATTERNS} 句，可直接编辑</span></div>
               <textarea className="pattern-textarea" value={patterns} onChange={(event) => setPatterns(event.target.value)} placeholder="例如：¿Cómo te llamas? / Me llamo [名字]." />
             </div>
           </article>
