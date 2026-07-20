@@ -137,6 +137,7 @@ textarea:focus, input:focus, select:focus { border-color: #8799b5; box-shadow: 0
 .language-options label.selected i { border-color: var(--accent); color: white; background: var(--accent); }
 .field-grid { display: grid; gap: 13px; }
 .field-grid.two { grid-template-columns: 1fr 1fr; }
+.field-grid .wide-field { grid-column: 1 / -1; }
 .compact-controls { grid-template-columns: 1fr 1fr; }
 .compact-controls label:last-child { grid-column: 1 / -1; }
 .compact-controls label > small { margin-top: -2px; color: #8193aa; font-size: 8px; font-weight: 550; line-height: 1.4; }
@@ -204,6 +205,7 @@ footer p { margin: 0; }
   .panel-heading { align-items: flex-start; }
   .statline { display: none; }
   .field-grid.two, .compact-controls, .style-grid, .extraction-options { grid-template-columns: 1fr; }
+  .field-grid .wide-field { grid-column: auto; }
   .compact-controls label:last-child { grid-column: auto; }
   .dropzone { min-height: 190px; padding: 22px 14px; }
   .file-row { grid-template-columns: 36px minmax(0,1fr); }

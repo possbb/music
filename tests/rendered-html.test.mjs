@@ -98,3 +98,13 @@ test("asks the lyric model for copy-friendly Markdown blocks", async () => {
   assert.match(pageSource, /两个独立的 Markdown 围栏代码块/);
   assert.match(pageSource, /代码块语言标记为 text/);
 });
+
+test("offers a remembered slow, medium, or fast song tempo", async () => {
+  const pageSource = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
+  assert.match(pageSource, /"slow"[\s\S]*?60–85 BPM/);
+  assert.match(pageSource, /"medium"[\s\S]*?90–115 BPM/);
+  assert.match(pageSource, /"fast"[\s\S]*?120–150 BPM/);
+  assert.match(pageSource, /useState<SongTempo>\("medium"\)/);
+  assert.match(pageSource, /tempo: SongTempo/);
+  assert.match(pageSource, /歌曲速度：\$\{tempoOption\.label\}/);
+});

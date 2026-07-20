@@ -73,6 +73,14 @@ const LENGTH_OPTIONS = [
   "约 6 分钟（多章节长歌 + 完整起承转合）",
 ];
 
+export type SongTempo = "slow" | "medium" | "fast";
+
+const TEMPO_OPTIONS: Array<{ value: SongTempo; label: string; detail: string }> = [
+  { value: "slow", label: "慢速", detail: "60–85 BPM，舒缓、发音清楚" },
+  { value: "medium", label: "中速", detail: "90–115 BPM，平稳、容易跟唱" },
+  { value: "fast", label: "快速", detail: "120–150 BPM，活泼、有推动力" },
+];
+
 const PREFERENCE_STORAGE_KEY = "letralab:creative-options:v1";
 
 type SavedPreferences = {
@@ -83,6 +91,7 @@ type SavedPreferences = {
   mood: string;
   level: string;
   length: string;
+  tempo: SongTempo;
   languages: LyricLanguage[];
   languageMode: "separate" | "aligned";
   targetApp: TargetApp;
@@ -191,6 +200,7 @@ export function buildPrompt(options: {
   mood: string;
   level: string;
   length: string;
+  tempo: SongTempo;
   languages: readonly LyricLanguage[];
   languageMode: "separate" | "aligned";
   targetApp: TargetApp;
@@ -211,6 +221,7 @@ export function buildPrompt(options: {
   const requiredKeywordCount = options.keywords.length ? Math.max(1, Math.ceil(options.keywords.length * options.vocabularyRatio / 100)) : 0;
   const requiredPatternCount = patternItems.length ? Math.max(1, Math.ceil(patternItems.length * options.vocabularyRatio / 100)) : 0;
   const vocabularyLabel = VOCABULARY_OPTIONS.find((item) => item.value === options.vocabularyRatio)?.label;
+  const tempoOption = TEMPO_OPTIONS.find((item) => item.value === options.tempo) ?? TEMPO_OPTIONS[1];
   const languageNames = options.languages.map((language) => LANGUAGE_OPTIONS.find((item) => item.value === language)?.label).filter(Boolean);
   const languageOrder = options.languages.map((language) => ({ es: "ES", zh: "中文", en: "EN" })[language]).join(" → ");
   const languageInstruction = options.languages.length === 1
@@ -237,6 +248,7 @@ export function buildPrompt(options: {
 - 多语言编排：${options.languages.length === 1 ? "单语言歌词" : options.languageMode === "separate" ? "分别生成多套完整歌词" : "一套歌词逐句多语言对照"}
 - 教材词汇使用比例：${vocabularyLabel}（约 ${options.vocabularyRatio}%）
 - 表达难度：${options.level}（优先使用短句、常用词和清晰语法）
+- 歌曲速度：${tempoOption.label}（${tempoOption.detail}）
 - 歌曲长度：${options.length}
 - 听众：正在学习西班牙语的中文母语初学者
 
@@ -291,6 +303,7 @@ export default function Home() {
   const [mood, setMood] = useState("温暖、轻快、有希望");
   const [level, setLevel] = useState("A1 入门");
   const [length, setLength] = useState("约 2 分钟（2 段主歌 + 重复副歌）");
+  const [tempo, setTempo] = useState<SongTempo>("medium");
   const [languages, setLanguages] = useState<LyricLanguage[]>(["es"]);
   const [languageMode, setLanguageMode] = useState<"separate" | "aligned">("separate");
   const [targetApp, setTargetApp] = useState<TargetApp>("suno");
@@ -315,6 +328,7 @@ export default function Home() {
       if (typeof saved.mood === "string") setMood(saved.mood);
       if (typeof saved.level === "string" && ["A1 入门", "A2 初级", "B1 中级"].includes(saved.level)) setLevel(saved.level);
       if (typeof saved.length === "string" && LENGTH_OPTIONS.includes(saved.length)) setLength(saved.length);
+      if (saved.tempo && TEMPO_OPTIONS.some((item) => item.value === saved.tempo)) setTempo(saved.tempo);
       if (Array.isArray(saved.languages)) {
         const validLanguages = LANGUAGE_OPTIONS.map((item) => item.value).filter((language) => saved.languages?.includes(language));
         if (validLanguages.length) setLanguages(validLanguages);
@@ -341,6 +355,7 @@ export default function Home() {
       mood,
       level,
       length,
+      tempo,
       languages,
       languageMode,
       targetApp,
@@ -353,7 +368,7 @@ export default function Home() {
     } catch {
       // Private browsing or storage restrictions should not block the app.
     }
-  }, [preferencesReady, extractionScope, topic, customTopic, style, mood, level, length, languages, languageMode, targetApp, customApp, vocabularyRatio, requirements]);
+  }, [preferencesReady, extractionScope, topic, customTopic, style, mood, level, length, tempo, languages, languageMode, targetApp, customApp, vocabularyRatio, requirements]);
 
   const activeExtractionOption = EXTRACTION_OPTIONS.find((item) => item.value === extractionScope) ?? EXTRACTION_OPTIONS[1];
 
@@ -427,7 +442,7 @@ export default function Home() {
   }
 
   function generate() {
-    const prompt = buildPrompt({ topic, customTopic, style, mood, level, length, languages, languageMode, targetApp, customApp, vocabularyRatio, keywords, patterns, requirements });
+    const prompt = buildPrompt({ topic, customTopic, style, mood, level, length, tempo, languages, languageMode, targetApp, customApp, vocabularyRatio, keywords, patterns, requirements });
     setGenerated(prompt);
     setCopied(false);
     window.setTimeout(() => outputRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 80);
@@ -616,7 +631,12 @@ export default function Home() {
 
             <div className="field-grid two">
               <label>整体情绪<input value={mood} onChange={(event) => setMood(event.target.value)} /></label>
-              <label>歌曲长度
+              <label>歌曲速度
+                <select value={tempo} onChange={(event) => setTempo(event.target.value as SongTempo)}>
+                  {TEMPO_OPTIONS.map((item) => <option value={item.value} key={item.value}>{item.label} — {item.detail}</option>)}
+                </select>
+              </label>
+              <label className="wide-field">歌曲长度
                 <select value={length} onChange={(event) => setLength(event.target.value)}>
                   {LENGTH_OPTIONS.map((option) => <option key={option}>{option}</option>)}
                 </select>
