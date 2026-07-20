@@ -34,6 +34,7 @@ const prompt = buildPrompt({
   languageMode: "aligned",
   targetApp: "suno",
   customApp: "",
+  vocabularyRatio: 50,
   keywords: combinedKeywords,
   patterns: combinedPatterns.join("\n"),
   requirements: "副歌使用问答",
@@ -46,6 +47,8 @@ assert.match(prompt, /ES:、中文：、EN:/);
 assert.match(prompt, /不得混入未选择的语言/);
 assert.match(prompt, /【Style of Music】/);
 assert.match(prompt, /Suno Custom 模式/);
+assert.match(prompt, /普通（约 50%）/);
+assert.match(prompt, /至少自然使用 9 个上方关键词和 5 个教材句型/);
 
 const separatePrompt = buildPrompt({
   topic: "友情",
@@ -58,6 +61,7 @@ const separatePrompt = buildPrompt({
   languageMode: "separate",
   targetApp: "udio",
   customApp: "",
+  vocabularyRatio: 80,
   keywords: combinedKeywords,
   patterns: combinedPatterns.join("\n"),
   requirements: "",
@@ -66,4 +70,7 @@ assert.match(separatePrompt, /分别生成 2 套完整歌词/);
 assert.match(separatePrompt, /不要逐字硬译/);
 assert.match(separatePrompt, /【Udio Prompt】/);
 assert.match(separatePrompt, /guidance tags/);
+assert.match(separatePrompt, /很多（约 80%）/);
+assert.match(separatePrompt, /至少自然使用 15 个上方关键词和 8 个教材句型/);
+assert.match(separatePrompt, /其余约 20% 可以根据主题、风格、情绪和目标应用自由创作/);
 console.log(`Combined prompt: ${combinedKeywords.length} keywords, ${combinedPatterns.length} patterns, ${prompt.length} chars`);
