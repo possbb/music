@@ -561,32 +561,27 @@ export default function Home() {
               </div>
             </fieldset>
 
-            <fieldset className={`mode-fieldset ${languages.length === 1 ? "inactive" : ""}`}>
-              <legend>多语言编排 <span>{languages.length === 1 ? "选择两种以上后生效" : `已选择 ${languages.length} 种语言`}</span></legend>
-              <div className="mode-options">
-                <label className={languageMode === "separate" ? "selected" : ""}>
-                  <input type="radio" name="language-mode" value="separate" checked={languageMode === "separate"} onChange={() => setLanguageMode("separate")} disabled={languages.length === 1} />
-                  <b>分别生成多套</b><small>每种语言一首完整歌词</small>
-                </label>
-                <label className={languageMode === "aligned" ? "selected" : ""}>
-                  <input type="radio" name="language-mode" value="aligned" checked={languageMode === "aligned"} onChange={() => setLanguageMode("aligned")} disabled={languages.length === 1} />
-                  <b>逐句多语言对照</b><small>一套歌词按语言逐行排列</small>
-                </label>
-              </div>
-            </fieldset>
-
-            <fieldset className="app-fieldset">
-              <legend>歌曲创作应用 <span>提示词会自动适配</span></legend>
-              <div className="app-options">
-                {TARGET_APPS.map((item) => (
-                  <label className={targetApp === item.value ? "selected" : ""} key={item.value}>
-                    <input type="radio" name="target-app" value={item.value} checked={targetApp === item.value} onChange={() => setTargetApp(item.value)} />
-                    <i aria-hidden="true">{item.mark}</i>
-                    <span><b>{item.label}</b><small>{item.detail}</small></span>
-                  </label>
-                ))}
-              </div>
-            </fieldset>
+            <div className="field-grid compact-controls">
+              <label>多语言编排
+                <select value={languageMode} onChange={(event) => setLanguageMode(event.target.value as "separate" | "aligned")} disabled={languages.length === 1}>
+                  <option value="separate">分别生成多套（每种语言一首）</option>
+                  <option value="aligned">逐句多语言对照</option>
+                </select>
+                <small>{languages.length === 1 ? "选择两种以上语言后生效" : `当前已选择 ${languages.length} 种语言`}</small>
+              </label>
+              <label>歌曲创作应用
+                <select value={targetApp} onChange={(event) => setTargetApp(event.target.value as TargetApp)}>
+                  {TARGET_APPS.map((item) => <option value={item.value} key={item.value}>{item.label} — {item.detail}</option>)}
+                </select>
+                <small>提示词会自动适配所选应用</small>
+              </label>
+              <label>教材词汇使用比例
+                <select value={vocabularyRatio} onChange={(event) => setVocabularyRatio(Number(event.target.value) as VocabularyRatio)}>
+                  {VOCABULARY_OPTIONS.map((item) => <option value={item.value} key={item.value}>{item.value}% · {item.label} — {item.detail}</option>)}
+                </select>
+                <small>比例按核心词汇、短语和句型估算</small>
+              </label>
+            </div>
             {targetApp === "generic" && <label className="full-field">应用名称（可选）<input value={customApp} onChange={(event) => setCustomApp(event.target.value)} placeholder="例如：其他 AI 音乐应用" /></label>}
 
             <div className="field-grid two">
@@ -598,20 +593,6 @@ export default function Home() {
               </label>
             </div>
             {topic === "自定义主题" && <label className="full-field">自定义主题<input value={customTopic} onChange={(event) => setCustomTopic(event.target.value)} placeholder="例如：第一次在巴塞罗那问路" /></label>}
-
-            <fieldset className="vocabulary-fieldset">
-              <legend>教材词汇使用比例 <span>其余内容由模型自由发挥</span></legend>
-              <div className="vocabulary-options">
-                {VOCABULARY_OPTIONS.map((item) => (
-                  <label className={vocabularyRatio === item.value ? "selected" : ""} key={item.value}>
-                    <input type="radio" name="vocabulary-ratio" value={item.value} checked={vocabularyRatio === item.value} onChange={() => setVocabularyRatio(item.value)} />
-                    <span><b>{item.value}%</b><em>{item.label}</em></span>
-                    <small>{item.detail}</small>
-                  </label>
-                ))}
-              </div>
-              <p className="ratio-note">比例按核心词汇、短语和句型估算，不计算冠词、介词等功能词。</p>
-            </fieldset>
 
             <fieldset>
               <legend>编制风格</legend>

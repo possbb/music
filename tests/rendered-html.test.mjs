@@ -78,3 +78,12 @@ test("places the prompt output beside the creative settings on wide screens", as
   assert.match(css, /\.workspace-side \{ grid-template-columns: minmax\(390px, 1\.12fr\) minmax\(320px, \.88fr\)/);
   assert.match(css, /@media \(max-width: 900px\)[\s\S]*?\.workspace-side \{ grid-template-columns: 1fr; \}/);
 });
+
+test("uses compact selects for arrangement, music app, and textbook ratio", async () => {
+  const pageSource = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
+  assert.match(pageSource, /className="field-grid compact-controls"/);
+  assert.match(pageSource, /<select value=\{languageMode\}/);
+  assert.match(pageSource, /<select value=\{targetApp\}/);
+  assert.match(pageSource, /<select value=\{vocabularyRatio\}/);
+  assert.doesNotMatch(pageSource, /name="language-mode"|name="target-app"|name="vocabulary-ratio"/);
+});
