@@ -17,6 +17,15 @@ const LANGUAGE_OPTIONS: Array<{ value: LyricLanguage; label: string; native: str
   { value: "en", label: "英文", native: "English" },
 ];
 
+export type TargetApp = "suno" | "udio" | "mureka" | "generic";
+
+const TARGET_APPS: Array<{ value: TargetApp; label: string; detail: string; mark: string }> = [
+  { value: "suno", label: "Suno", detail: "歌词、音乐风格与标题分栏", mark: "SU" },
+  { value: "udio", label: "Udio", detail: "Prompt + Custom Lyrics 标签", mark: "UD" },
+  { value: "mureka", label: "Mureka", detail: "歌词与音乐描述配套输出", mark: "MU" },
+  { value: "generic", label: "其他 / 通用", detail: "适合复制到其他音乐应用", mark: "AI" },
+];
+
 const SONG_STYLES = [
   { value: "清新流行", detail: "明亮、好记、适合课堂合唱", color: "mint" },
   { value: "情感抒情", detail: "温柔钢琴与渐进情绪", color: "rose" },
@@ -140,6 +149,8 @@ export function buildPrompt(options: {
   length: string;
   languages: readonly LyricLanguage[];
   languageMode: "separate" | "aligned";
+  targetApp: TargetApp;
+  customApp: string;
   keywords: string[];
   patterns: string;
   requirements: string;
@@ -158,10 +169,18 @@ export function buildPrompt(options: {
     : options.languageMode === "separate"
       ? `分别生成 ${options.languages.length} 套完整歌词，每种语言一套。各版本的故事、段落结构和副歌含义要一致，但应按各语言习惯自然押韵，不要逐字硬译。每套歌词前分别使用清楚的版本标题。`
       : `只生成一套多语言对照歌词。每个歌词句组按“${languageOrder}”顺序逐句对照排列，使用 ${options.languages.map((language) => ({ es: "ES:", zh: "中文：", en: "EN:" })[language]).join("、")} 作为行前缀；对应行必须表达相同含义。`;
+  const targetName = options.targetApp === "generic" ? options.customApp.trim() || "通用 AI 音乐创作应用" : TARGET_APPS.find((item) => item.value === options.targetApp)?.label;
+  const appInstruction = {
+    suno: `严格按以下三个区块输出：\n【Title】简短歌名\n【Style of Music】用简洁英文关键词描述曲风、情绪、速度、主要乐器和人声，不写具体艺人姓名\n【Lyrics】带段落标签的完整歌词，可直接粘贴到 Suno Custom 模式`,
+    udio: `严格按以下三个区块输出：\n【Title】简短歌名\n【Udio Prompt】用简洁关键词描述主题、曲风、情绪、速度和乐器\n【Custom Lyrics】使用 [Verse]、[Chorus]、[Bridge] 等 guidance tags；需要时可用圆括号标记和声`,
+    mureka: `严格按以下三个区块输出：\n【Title】简短歌名\n【Music Description】描述曲风、情绪、速度、乐器和人声\n【Lyrics】带清楚段落标签的完整歌词`,
+    generic: `严格按以下三个区块输出：\n【Title】简短歌名\n【Music Style Prompt】可复制到 ${targetName} 的音乐风格描述\n【Lyrics】带清楚段落标签的完整歌词`,
+  }[options.targetApp];
 
-  return `你是一位擅长语言教学歌曲的多语种作词人。请根据以下西班牙语教材内容，创作可直接用于 Suno 的歌词。
+  return `你是一位擅长语言教学歌曲的多语种作词人。请根据以下西班牙语教材内容，创作可直接用于 ${targetName} 的歌曲素材。
 
 【创作目标】
+- 目标歌曲应用：${targetName}
 - 歌词主题：${topic}
 - 编曲/歌词风格：${options.style}
 - 情绪：${options.mood}
@@ -179,7 +198,7 @@ ${patterns || "- 请围绕主题使用适合初学者的西班牙语完整句子
 
 【写作要求】
 1. ${languageInstruction}
-2. 除版本标题、段落标记和对照行前缀外，只输出歌词，不要解释或添加创作说明；不得混入未选择的语言。
+2. 除目标应用需要的标题、音乐风格提示、版本标题、段落标记和对照行前缀外，不要解释或添加创作说明；歌词不得混入未选择的语言。
 3. 使用 [Intro]、[Verse 1]、[Pre-Chorus]、[Chorus]、[Verse 2]、[Bridge]、[Final Chorus] 标记结构；不需要的段落可省略。
 4. 副歌要简单、朗朗上口，并重复 2—4 个核心句型帮助记忆。
 5. 主歌要有连贯情境，不要把教材词汇机械罗列成清单。
@@ -189,7 +208,10 @@ ${patterns || "- 请围绕主题使用适合初学者的西班牙语完整句子
 9. 不要写歌手姓名或模仿具体在世艺人的风格。
 ${options.requirements.trim() ? `10. 额外要求：${options.requirements.trim()}` : ""}
 
-现在请直接写出完整歌词。`;
+【${targetName} 输出格式】
+${appInstruction}
+
+现在请严格按上述格式直接输出结果。`;
 }
 
 export default function Home() {
@@ -208,6 +230,8 @@ export default function Home() {
   const [length, setLength] = useState("约 2 分钟（2 段主歌 + 重复副歌）");
   const [languages, setLanguages] = useState<LyricLanguage[]>(["es"]);
   const [languageMode, setLanguageMode] = useState<"separate" | "aligned">("separate");
+  const [targetApp, setTargetApp] = useState<TargetApp>("suno");
+  const [customApp, setCustomApp] = useState("");
   const [requirements, setRequirements] = useState("");
   const [generated, setGenerated] = useState("");
   const [copied, setCopied] = useState(false);
@@ -278,7 +302,7 @@ export default function Home() {
   }
 
   function generate() {
-    const prompt = buildPrompt({ topic, customTopic, style, mood, level, length, languages, languageMode, keywords, patterns, requirements });
+    const prompt = buildPrompt({ topic, customTopic, style, mood, level, length, languages, languageMode, targetApp, customApp, keywords, patterns, requirements });
     setGenerated(prompt);
     setCopied(false);
     window.setTimeout(() => outputRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 80);
@@ -419,6 +443,20 @@ export default function Home() {
                 </label>
               </div>
             </fieldset>
+
+            <fieldset className="app-fieldset">
+              <legend>歌曲创作应用 <span>提示词会自动适配</span></legend>
+              <div className="app-options">
+                {TARGET_APPS.map((item) => (
+                  <label className={targetApp === item.value ? "selected" : ""} key={item.value}>
+                    <input type="radio" name="target-app" value={item.value} checked={targetApp === item.value} onChange={() => setTargetApp(item.value)} />
+                    <i aria-hidden="true">{item.mark}</i>
+                    <span><b>{item.label}</b><small>{item.detail}</small></span>
+                  </label>
+                ))}
+              </div>
+            </fieldset>
+            {targetApp === "generic" && <label className="full-field">应用名称（可选）<input value={customApp} onChange={(event) => setCustomApp(event.target.value)} placeholder="例如：其他 AI 音乐应用" /></label>}
 
             <div className="field-grid two">
               <label>歌词主题

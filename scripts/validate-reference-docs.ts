@@ -32,6 +32,8 @@ const prompt = buildPrompt({
   length: "约 2 分钟（2 段主歌 + 重复副歌）",
   languages: ["es", "zh", "en"],
   languageMode: "aligned",
+  targetApp: "suno",
+  customApp: "",
   keywords: combinedKeywords,
   patterns: combinedPatterns.join("\n"),
   requirements: "副歌使用问答",
@@ -42,6 +44,8 @@ assert.match(prompt, /¿/);
 assert.match(prompt, /一套歌词逐句多语言对照/);
 assert.match(prompt, /ES:、中文：、EN:/);
 assert.match(prompt, /不得混入未选择的语言/);
+assert.match(prompt, /【Style of Music】/);
+assert.match(prompt, /Suno Custom 模式/);
 
 const separatePrompt = buildPrompt({
   topic: "友情",
@@ -52,10 +56,14 @@ const separatePrompt = buildPrompt({
   length: "约 3 分钟（完整叙事结构）",
   languages: ["es", "zh"],
   languageMode: "separate",
+  targetApp: "udio",
+  customApp: "",
   keywords: combinedKeywords,
   patterns: combinedPatterns.join("\n"),
   requirements: "",
 });
 assert.match(separatePrompt, /分别生成 2 套完整歌词/);
 assert.match(separatePrompt, /不要逐字硬译/);
+assert.match(separatePrompt, /【Udio Prompt】/);
+assert.match(separatePrompt, /guidance tags/);
 console.log(`Combined prompt: ${combinedKeywords.length} keywords, ${combinedPatterns.length} patterns, ${prompt.length} chars`);

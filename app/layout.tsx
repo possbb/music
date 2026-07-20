@@ -10,7 +10,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
   return {
     title: "LetraLab｜西班牙语教材歌词提示词生成器",
-    description: "上传西班牙语教材，提取关键词与句型，生成西班牙语、中文或英文的单语、多套或逐句对照歌词提示词。",
+    description: "上传西班牙语教材，提取关键词与句型，生成适配 Suno、Udio、Mureka 等歌曲应用的多语言歌词提示词。",
     openGraph: {
       title: "LetraLab｜把课堂句型，变成会唱的西语",
       description: "从教材中提取关键词与句型，生成单语言、多套语言或逐句对照的教学歌曲提示词。",
