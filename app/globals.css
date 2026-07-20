@@ -103,7 +103,7 @@ textarea:focus, input:focus, select:focus { border-color: #8799b5; box-shadow: 0
 .statline { display: flex; gap: 7px; flex-wrap: wrap; justify-content: flex-end; }
 .statline span { border-radius: 99px; padding: 5px 8px; background: #f2f0eb; color: var(--muted); font-size: 9px; font-weight: 700; }
 .result-block + .result-block { margin-top: 25px; padding-top: 23px; border-top: 1px solid #eee9e1; }
-.extraction-options { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.extraction-options { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
 .extraction-options label { position: relative; min-height: 64px; padding: 10px 11px; border: 1px solid #ded9cf; border-radius: 11px; display: grid; gap: 4px; background: #fcfbf8; cursor: pointer; transition: .15s ease; }
 .extraction-options label:hover { border-color: #9babc0; background: #f7f9fc; }
 .extraction-options label.selected { border-color: #6d87ad; background: #eef4fc; box-shadow: inset 0 0 0 1px rgba(71,103,148,.08); }

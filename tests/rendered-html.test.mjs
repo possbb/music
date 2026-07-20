@@ -67,6 +67,7 @@ test("extracts a broader set of textbook terms and patterns", async () => {
   const pageSource = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
   assert.match(pageSource, /"focused"[\s\S]*?keywords: 40, patterns: 24/);
   assert.match(pageSource, /"expanded"[\s\S]*?keywords: 80, patterns: 48/);
+  assert.match(pageSource, /"broad"[\s\S]*?keywords: 120, patterns: 72/);
   assert.match(pageSource, /"comprehensive"[\s\S]*?keywords: 160, patterns: 96/);
   assert.match(pageSource, /useState<ExtractionScope>\("expanded"\)/);
   assert.match(pageSource, /changeExtractionScope/);

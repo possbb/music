@@ -28,11 +28,12 @@ const TARGET_APPS: Array<{ value: TargetApp; label: string; detail: string; mark
 
 export type VocabularyRatio = 20 | 50 | 80;
 
-export type ExtractionScope = "focused" | "expanded" | "comprehensive";
+export type ExtractionScope = "focused" | "expanded" | "broad" | "comprehensive";
 
 const EXTRACTION_OPTIONS: Array<{ value: ExtractionScope; label: string; detail: string; keywords: number; patterns: number }> = [
   { value: "focused", label: "重点", detail: "适合短教材", keywords: 40, patterns: 24 },
   { value: "expanded", label: "丰富", detail: "推荐使用", keywords: 80, patterns: 48 },
+  { value: "broad", label: "广泛", detail: "覆盖更多内容", keywords: 120, patterns: 72 },
   { value: "comprehensive", label: "全面", detail: "适合长教材", keywords: 160, patterns: 96 },
 ];
 
