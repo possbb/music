@@ -181,7 +181,7 @@ export function buildPrompt(options: {
     ? `只生成一套${languageNames[0]}歌词。`
     : options.languageMode === "separate"
       ? `分别生成 ${options.languages.length} 套完整歌词，每种语言一套。各版本的故事、段落结构和副歌含义要一致，但应按各语言习惯自然押韵，不要逐字硬译。每套歌词前分别使用清楚的版本标题。`
-      : `只生成一套多语言对照歌词。每个歌词句组按“${languageOrder}”顺序逐句对照排列，使用 ${options.languages.map((language) => ({ es: "ES:", zh: "中文：", en: "EN:" })[language]).join("、")} 作为行前缀；对应行必须表达相同含义。`;
+      : `只生成一套多语言对照歌词。每个对应句组按“${languageOrder}”顺序逐句排列，各行只写纯歌词，不要添加 ES:、中文：、EN: 或其他语言提示；每个多语言对应句组之间留一个空行。对应行必须表达相同含义。`;
   const targetName = options.targetApp === "generic" ? options.customApp.trim() || "通用 AI 音乐创作应用" : TARGET_APPS.find((item) => item.value === options.targetApp)?.label;
   const appInstruction = {
     suno: `严格按以下三个区块输出：\n【Title】简短歌名\n【Style of Music】用简洁英文关键词描述曲风、情绪、速度、主要乐器和人声，不写具体艺人姓名\n【Lyrics】带段落标签的完整歌词，可直接粘贴到 Suno Custom 模式`,
@@ -218,7 +218,7 @@ ${patterns || "- 请围绕主题使用适合初学者的西班牙语完整句子
 
 【写作要求】
 1. ${languageInstruction}
-2. 除目标应用需要的标题、音乐风格提示、版本标题、段落标记和对照行前缀外，不要解释或添加创作说明；歌词不得混入未选择的语言。
+2. 除目标应用需要的标题、音乐风格提示、版本标题和歌曲段落标记外，不要解释或添加创作说明；歌词不得混入未选择的语言。
 3. 使用 [Intro]、[Verse 1]、[Pre-Chorus]、[Chorus]、[Verse 2]、[Bridge]、[Final Chorus] 标记结构；不需要的段落可省略。
 4. 副歌要简单、朗朗上口，并重复 2—4 个核心句型帮助记忆。
 5. 主歌要有连贯情境，不要把教材词汇机械罗列成清单。

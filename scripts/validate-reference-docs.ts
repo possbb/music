@@ -43,7 +43,9 @@ const prompt = buildPrompt({
 assert.match(prompt, /Suno/);
 assert.match(prompt, /¿/);
 assert.match(prompt, /一套歌词逐句多语言对照/);
-assert.match(prompt, /ES:、中文：、EN:/);
+assert.match(prompt, /各行只写纯歌词/);
+assert.match(prompt, /不要添加 ES:、中文：、EN:/);
+assert.match(prompt, /每个多语言对应句组之间留一个空行/);
 assert.match(prompt, /不得混入未选择的语言/);
 assert.match(prompt, /【Style of Music】/);
 assert.match(prompt, /Suno Custom 模式/);
