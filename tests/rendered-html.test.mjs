@@ -69,3 +69,9 @@ test("extracts a broader set of textbook terms and patterns", async () => {
   assert.match(pageSource, /MAX_EXTRACTED_PATTERNS = 24/);
   assert.match(pageSource, /line\.length >= 8 && line\.length <= 180/);
 });
+
+test("places the prompt output beside the creative settings on wide screens", async () => {
+  const css = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
+  assert.match(css, /\.workspace-side \{ grid-template-columns: minmax\(390px, 1\.12fr\) minmax\(320px, \.88fr\)/);
+  assert.match(css, /@media \(max-width: 900px\)[\s\S]*?\.workspace-side \{ grid-template-columns: 1fr; \}/);
+});

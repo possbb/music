@@ -61,15 +61,16 @@ h1 { margin: 0; max-width: 760px; font-family: Georgia, "Noto Serif SC", serif; 
 .hero-card li b { color: var(--accent); font-size: 10px; letter-spacing: .1em; }
 
 .workspace {
-  max-width: 1220px;
+  max-width: 1600px;
   margin: 0 auto 80px;
   padding: 0 24px;
   display: grid;
-  grid-template-columns: minmax(0, 1.04fr) minmax(390px, .96fr);
+  grid-template-columns: minmax(360px, .85fr) minmax(780px, 1.7fr);
   gap: 22px;
   align-items: start;
 }
 .workspace-main, .workspace-side { display: grid; gap: 22px; }
+.workspace-side { grid-template-columns: minmax(390px, 1.12fr) minmax(320px, .88fr); align-items: start; }
 .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 22px; padding: 26px; box-shadow: 0 14px 40px rgba(40,35,25,.045); }
 .panel-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 22px; }
 .panel-heading > div:first-child { display: flex; align-items: center; gap: 11px; }
@@ -193,10 +194,15 @@ footer { max-width: 1172px; margin: 0 auto; padding: 30px 0 44px; border-top: 1p
 footer span { color: var(--ink); font-weight: 800; }
 footer p { margin: 0; }
 
+@media (max-width: 1180px) {
+  .workspace { grid-template-columns: 1fr; }
+  .workspace-side { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
 @media (max-width: 900px) {
   .hero { grid-template-columns: 1fr; gap: 30px; padding-top: 54px; }
   .hero-card { max-width: 500px; }
-  .workspace { grid-template-columns: 1fr; }
+  .workspace-side { grid-template-columns: 1fr; }
   .creative-panel { order: 0; }
 }
 
