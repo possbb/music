@@ -224,6 +224,7 @@ export function buildPrompt(options: {
   const tempoOption = TEMPO_OPTIONS.find((item) => item.value === options.tempo) ?? TEMPO_OPTIONS[1];
   const languageNames = options.languages.map((language) => LANGUAGE_OPTIONS.find((item) => item.value === language)?.label).filter(Boolean);
   const languageOrder = options.languages.map((language) => ({ es: "ES", zh: "中文", en: "EN" })[language]).join(" → ");
+  const neteaseLanguage = options.languages.includes("es") ? "西班牙语" : languageNames[0] ?? "所选语言";
   const languageInstruction = options.languages.length === 1
     ? `只生成一套${languageNames[0]}歌词。`
     : options.languageMode === "separate"
@@ -231,10 +232,10 @@ export function buildPrompt(options: {
       : `只生成一套多语言对照歌词。每个对应句组按“${languageOrder}”顺序逐句排列，各行只写纯歌词，不要添加 ES:、中文：、EN: 或其他语言提示；每个多语言对应句组之间留一个空行。对应行必须表达相同含义。`;
   const targetName = options.targetApp === "generic" ? options.customApp.trim() || "通用 AI 音乐创作应用" : TARGET_APPS.find((item) => item.value === options.targetApp)?.label;
   const appInstruction = {
-    suno: `使用以下 Markdown 标题：\n# Title\n## Style of Music\n## Lyrics\nStyle of Music 使用简洁英文关键词描述曲风、情绪、速度、主要乐器和人声，不写具体艺人姓名；Lyrics 带段落标签，可直接粘贴到 Suno Custom 模式。`,
-    udio: `使用以下 Markdown 标题：\n# Title\n## Udio Prompt\n## Custom Lyrics\nUdio Prompt 使用简洁关键词描述主题、曲风、情绪、速度和乐器；Custom Lyrics 使用 [Verse]、[Chorus]、[Bridge] 等 guidance tags，需要时可用圆括号标记和声。`,
-    mureka: `使用以下 Markdown 标题：\n# Title\n## Music Description\n## Lyrics\nMusic Description 描述曲风、情绪、速度、乐器和人声；Lyrics 使用清楚的歌曲段落标签。`,
-    generic: `使用以下 Markdown 标题：\n# Title\n## Music Style Prompt\n## Lyrics\nMusic Style Prompt 是可复制到 ${targetName} 的音乐风格描述；Lyrics 使用清楚的歌曲段落标签。`,
+    suno: `使用以下 Markdown 标题：\n# Title\n## Style of Music\n## Lyrics\n## 网易云 LRC 歌词\nStyle of Music 使用简洁英文关键词描述曲风、情绪、速度、主要乐器和人声，不写具体艺人姓名；Lyrics 带段落标签，可直接粘贴到 Suno Custom 模式。`,
+    udio: `使用以下 Markdown 标题：\n# Title\n## Udio Prompt\n## Custom Lyrics\n## 网易云 LRC 歌词\nUdio Prompt 使用简洁关键词描述主题、曲风、情绪、速度和乐器；Custom Lyrics 使用 [Verse]、[Chorus]、[Bridge] 等 guidance tags，需要时可用圆括号标记和声。`,
+    mureka: `使用以下 Markdown 标题：\n# Title\n## Music Description\n## Lyrics\n## 网易云 LRC 歌词\nMusic Description 描述曲风、情绪、速度、乐器和人声；Lyrics 使用清楚的歌曲段落标签。`,
+    generic: `使用以下 Markdown 标题：\n# Title\n## Music Style Prompt\n## Lyrics\n## 网易云 LRC 歌词\nMusic Style Prompt 是可复制到 ${targetName} 的音乐风格描述；Lyrics 使用清楚的歌曲段落标签。`,
   }[options.targetApp];
 
   return `你是一位擅长语言教学歌曲的多语种作词人。请根据以下西班牙语教材内容，创作可直接用于 ${targetName} 的歌曲素材。
@@ -281,6 +282,10 @@ ${options.requirements.trim() ? `10. 额外要求：${options.requirements.trim(
 - 歌名写在一级标题“# Title”下方，使用普通 Markdown 文本。
 - 音乐风格提示和歌词必须分别放入两个独立的 Markdown 围栏代码块，并将代码块语言标记为 text，方便分别复制；不要把整份回答包在同一个代码块中。
 - 如果是分别生成多套语言歌词，每种语言使用独立的三级标题和独立歌词代码块；如果是逐句多语言对照，只使用一个歌词代码块。
+- 在平台歌词之后额外输出“## 网易云 LRC 歌词”。这里只生成一套${neteaseLanguage}歌词，放入独立的 Markdown 围栏代码块，并将代码块语言标记为 lrc。
+- 网易云 LRC 代码块中的每个非空歌词行都必须以 [mm:ss.xx] 时间戳开头，时间严格递增，从 [00:00.00] 开始并在目标歌曲时长内结束。
+- 网易云 LRC 版本必须移除 [Intro]、[Verse]、[Chorus]、[Bridge] 等段落标签、语言提示、版本标题、解释、歌名、歌手、词曲作者及其他非歌词信息，只保留一套可演唱歌词和时间戳。
+- LRC 时间轴按目标速度和歌曲长度合理估算，确保结构完整；生成后不再重复说明或添加注意事项。
 
 【${targetName} 输出格式】
 ${appInstruction}

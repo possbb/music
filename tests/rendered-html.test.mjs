@@ -108,3 +108,12 @@ test("offers a remembered slow, medium, or fast song tempo", async () => {
   assert.match(pageSource, /tempo: SongTempo/);
   assert.match(pageSource, /歌曲速度：\$\{tempoOption\.label\}/);
 });
+
+test("asks for one copyable NetEase Cloud LRC lyric set", async () => {
+  const pageSource = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
+  assert.match(pageSource, /## 网易云 LRC 歌词/);
+  assert.match(pageSource, /这里只生成一套\$\{neteaseLanguage\}歌词/);
+  assert.match(pageSource, /代码块语言标记为 lrc/);
+  assert.match(pageSource, /\[mm:ss\.xx\] 时间戳/);
+  assert.match(pageSource, /必须移除 \[Intro\].*\[Verse\].*\[Chorus\].*\[Bridge\]/);
+});

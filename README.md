@@ -15,6 +15,7 @@ GitHub Pages：https://possbb.github.io/music/
 - 适配 Suno、Udio、Mureka 及其他歌曲创作应用
 - 设置教材词汇使用比例，并生成可复制给大模型的歌词任务书
 - 要求大模型用独立 Markdown 区块输出 Style 和 Lyrics
+- 同时生成一套可复制的网易云 LRC Markdown 歌词初稿
 - 自动记住当前浏览器中的创作选项
 - 教材内容不上传到服务器
 
