@@ -135,6 +135,10 @@ textarea:focus, input:focus, select:focus { border-color: #8799b5; box-shadow: 0
 .language-options small { display: block; margin-top: 2px; color: #91a2b9; font-size: 9px; }
 .language-options i { display: grid; place-items: center; width: 19px; height: 19px; flex: 0 0 auto; border: 1px solid rgba(255,255,255,.18); border-radius: 50%; color: #aab8ca; font-size: 10px; font-style: normal; }
 .language-options label.selected i { border-color: var(--accent); color: white; background: var(--accent); }
+.language-order-note { margin: 8px 1px 0; color: #b7c5d6; font-size: 9px; line-height: 1.5; }
+.language-order-note span { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.language-order-note b { color: #fff; font-size: 9px; }
+.language-order-note small { display: block; margin-top: 2px; color: #8193aa; font-size: 8px; }
 .field-grid { display: grid; gap: 13px; }
 .field-grid.two { grid-template-columns: 1fr 1fr; }
 .field-grid .wide-field { grid-column: 1 / -1; }

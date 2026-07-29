@@ -30,6 +30,7 @@ const prompt = buildPrompt({
   mood: "温暖、轻快、有希望",
   level: "A1 入门",
   length: "约 2 分钟（2 段主歌 + 重复副歌）",
+  tempo: "medium",
   languages: ["es", "zh", "en"],
   languageMode: "aligned",
   targetApp: "suno",
@@ -47,10 +48,10 @@ assert.match(prompt, /各行只写纯歌词/);
 assert.match(prompt, /不要添加 ES:、中文：、EN:/);
 assert.match(prompt, /每个多语言对应句组之间留一个空行/);
 assert.match(prompt, /不得混入未选择的语言/);
-assert.match(prompt, /【Style of Music】/);
+assert.match(prompt, /## Style of Music/);
 assert.match(prompt, /Suno Custom 模式/);
 assert.match(prompt, /普通（约 50%）/);
-assert.match(prompt, /至少自然使用 9 个上方关键词和 5 个教材句型/);
+assert.match(prompt, /至少自然使用 40 个上方关键词和 24 个教材句型/);
 
 const separatePrompt = buildPrompt({
   topic: "友情",
@@ -59,6 +60,7 @@ const separatePrompt = buildPrompt({
   mood: "温暖",
   level: "A2 初级",
   length: "约 3 分钟（完整叙事结构）",
+  tempo: "medium",
   languages: ["es", "zh"],
   languageMode: "separate",
   targetApp: "udio",
@@ -68,11 +70,13 @@ const separatePrompt = buildPrompt({
   patterns: combinedPatterns.join("\n"),
   requirements: "",
 });
-assert.match(separatePrompt, /分别生成 2 套完整歌词/);
-assert.match(separatePrompt, /不要逐字硬译/);
-assert.match(separatePrompt, /【Udio Prompt】/);
+assert.match(separatePrompt, /先只用西班牙语创作唯一的原创主版本/);
+assert.match(separatePrompt, /西班牙语 → 中文/);
+assert.match(separatePrompt, /其余版本只能逐句忠实翻译，不得分别创作/);
+assert.match(separatePrompt, /中文如被选择，必须最后输出/);
+assert.match(separatePrompt, /## Udio Prompt/);
 assert.match(separatePrompt, /guidance tags/);
 assert.match(separatePrompt, /很多（约 80%）/);
-assert.match(separatePrompt, /至少自然使用 15 个上方关键词和 8 个教材句型/);
+assert.match(separatePrompt, /至少自然使用 64 个上方关键词和 39 个教材句型/);
 assert.match(separatePrompt, /其余约 20% 可以根据主题、风格、情绪和目标应用自由创作/);
 console.log(`Combined prompt: ${combinedKeywords.length} keywords, ${combinedPatterns.length} patterns, ${prompt.length} chars`);

@@ -28,7 +28,7 @@ test("renders the Spanish lyric prompt workspace", async () => {
   assert.match(html, /西班牙语/);
   assert.match(html, /中文/);
   assert.match(html, /英文/);
-  assert.match(html, /分别生成多套/);
+  assert.match(html, /首选语言原创/);
   assert.match(html, /逐句多语言对照/);
   assert.match(html, /歌曲创作应用/);
   assert.match(html, /Suno/);
@@ -87,6 +87,17 @@ test("uses compact selects for arrangement, music app, and textbook ratio", asyn
   assert.match(pageSource, /<select value=\{targetApp\}/);
   assert.match(pageSource, /<select value=\{vocabularyRatio\}/);
   assert.doesNotMatch(pageSource, /name="language-mode"|name="target-app"|name="vocabulary-ratio"/);
+});
+
+test("uses the first selected language as the original and keeps Chinese last", async () => {
+  const pageSource = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
+  assert.match(pageSource, /normalizeLanguageOrder/);
+  assert.match(pageSource, /unique\.includes\("zh"\)/);
+  assert.match(pageSource, /首选语言原创 \+ 依次翻译/);
+  assert.match(pageSource, /第 1 种为原创主语言；中文固定最后/);
+  assert.match(pageSource, /其余版本只能逐句忠实翻译，不得分别创作/);
+  assert.match(pageSource, /保持相同的段落结构、歌词行数、重复位置和核心含义/);
+  assert.doesNotMatch(pageSource, /分别生成 \$\{options\.languages\.length\} 套完整歌词/);
 });
 
 test("asks the lyric model for copy-friendly Markdown blocks", async () => {

@@ -13,9 +13,16 @@ export type LyricLanguage = "es" | "zh" | "en";
 
 const LANGUAGE_OPTIONS: Array<{ value: LyricLanguage; label: string; native: string }> = [
   { value: "es", label: "西班牙语", native: "Español" },
-  { value: "zh", label: "中文", native: "中文" },
   { value: "en", label: "英文", native: "English" },
+  { value: "zh", label: "中文", native: "中文" },
 ];
+
+export function normalizeLanguageOrder(languages: readonly LyricLanguage[]) {
+  const unique = [...new Set(languages)];
+  const ordered = unique.filter((language) => language !== "zh");
+  if (unique.includes("zh")) ordered.push("zh");
+  return ordered;
+}
 
 export type TargetApp = "suno" | "udio" | "mureka" | "generic";
 
@@ -222,13 +229,15 @@ export function buildPrompt(options: {
   const requiredPatternCount = patternItems.length ? Math.max(1, Math.ceil(patternItems.length * options.vocabularyRatio / 100)) : 0;
   const vocabularyLabel = VOCABULARY_OPTIONS.find((item) => item.value === options.vocabularyRatio)?.label;
   const tempoOption = TEMPO_OPTIONS.find((item) => item.value === options.tempo) ?? TEMPO_OPTIONS[1];
-  const languageNames = options.languages.map((language) => LANGUAGE_OPTIONS.find((item) => item.value === language)?.label).filter(Boolean);
-  const languageOrder = options.languages.map((language) => ({ es: "ES", zh: "中文", en: "EN" })[language]).join(" → ");
-  const neteaseLanguage = options.languages.includes("es") ? "西班牙语" : languageNames[0] ?? "所选语言";
-  const languageInstruction = options.languages.length === 1
+  const orderedLanguages = normalizeLanguageOrder(options.languages);
+  const languageNames = orderedLanguages.map((language) => LANGUAGE_OPTIONS.find((item) => item.value === language)?.label).filter(Boolean);
+  const languageOrder = orderedLanguages.map((language) => ({ es: "ES", zh: "中文", en: "EN" })[language]).join(" → ");
+  const primaryLanguage = languageNames[0] ?? "所选语言";
+  const neteaseLanguage = primaryLanguage;
+  const languageInstruction = orderedLanguages.length === 1
     ? `只生成一套${languageNames[0]}歌词。`
     : options.languageMode === "separate"
-      ? `分别生成 ${options.languages.length} 套完整歌词，每种语言一套。各版本的故事、段落结构和副歌含义要一致，但应按各语言习惯自然押韵，不要逐字硬译。每套歌词前分别使用清楚的版本标题。`
+      ? `先只用${primaryLanguage}创作唯一的原创主版本。主版本定稿后，严格按“${languageNames.join(" → ")}”顺序输出各语言版本；除${primaryLanguage}主版本外，其余版本只能逐句忠实翻译，不得分别创作，不得改变故事、增删歌词或调整段落。所有译文必须与主版本保持相同的段落结构、歌词行数、重复位置和核心含义，同时使用目标语言的自然表达。中文如被选择，必须最后输出。每个语言版本前使用清楚的版本标题。`
       : `只生成一套多语言对照歌词。每个对应句组按“${languageOrder}”顺序逐句排列，各行只写纯歌词，不要添加 ES:、中文：、EN: 或其他语言提示；每个多语言对应句组之间留一个空行。对应行必须表达相同含义。`;
   const targetName = options.targetApp === "generic" ? options.customApp.trim() || "通用 AI 音乐创作应用" : TARGET_APPS.find((item) => item.value === options.targetApp)?.label;
   const appInstruction = {
@@ -246,7 +255,7 @@ export function buildPrompt(options: {
 - 编曲/歌词风格：${options.style}
 - 情绪：${options.mood}
 - 歌词语言：${languageNames.join("、")}
-- 多语言编排：${options.languages.length === 1 ? "单语言歌词" : options.languageMode === "separate" ? "分别生成多套完整歌词" : "一套歌词逐句多语言对照"}
+- 多语言编排：${orderedLanguages.length === 1 ? "单语言歌词" : options.languageMode === "separate" ? "首选语言原创，其他语言依次翻译" : "一套歌词逐句多语言对照"}
 - 教材词汇使用比例：${vocabularyLabel}（约 ${options.vocabularyRatio}%）
 - 表达难度：${options.level}（优先使用短句、常用词和清晰语法）
 - 歌曲速度：${tempoOption.label}（${tempoOption.detail}）
@@ -281,7 +290,7 @@ ${options.requirements.trim() ? `10. 额外要求：${options.requirements.trim(
 - 整份回答必须使用 Markdown，不要添加开场白、结尾说明或表格。
 - 歌名写在一级标题“# Title”下方，使用普通 Markdown 文本。
 - 音乐风格提示和歌词必须分别放入两个独立的 Markdown 围栏代码块，并将代码块语言标记为 text，方便分别复制；不要把整份回答包在同一个代码块中。
-- 如果是分别生成多套语言歌词，每种语言使用独立的三级标题和独立歌词代码块；如果是逐句多语言对照，只使用一个歌词代码块。
+- 如果是“首选语言原创，其他语言依次翻译”，先输出主语言原创版本，再按界面所示顺序输出译文；每种语言使用独立的三级标题和独立歌词代码块。如果是逐句多语言对照，只使用一个歌词代码块。
 - 在平台歌词之后额外输出“## 网易云 LRC 歌词”。这里只生成一套${neteaseLanguage}歌词，放入独立的 Markdown 围栏代码块，并将代码块语言标记为 lrc。
 - 网易云 LRC 代码块中的每个非空歌词行都必须以 [mm:ss.xx] 时间戳开头，时间严格递增，从 [00:00.00] 开始并在目标歌曲时长内结束。
 - 网易云 LRC 版本必须移除 [Intro]、[Verse]、[Chorus]、[Bridge] 等段落标签、语言提示、版本标题、解释、歌名、歌手、词曲作者及其他非歌词信息，只保留一套可演唱歌词和时间戳。
@@ -335,8 +344,8 @@ export default function Home() {
       if (typeof saved.length === "string" && LENGTH_OPTIONS.includes(saved.length)) setLength(saved.length);
       if (saved.tempo && TEMPO_OPTIONS.some((item) => item.value === saved.tempo)) setTempo(saved.tempo);
       if (Array.isArray(saved.languages)) {
-        const validLanguages = LANGUAGE_OPTIONS.map((item) => item.value).filter((language) => saved.languages?.includes(language));
-        if (validLanguages.length) setLanguages(validLanguages);
+        const validLanguages = saved.languages.filter((language): language is LyricLanguage => LANGUAGE_OPTIONS.some((item) => item.value === language));
+        if (validLanguages.length) setLanguages(normalizeLanguageOrder(validLanguages));
       }
       if (saved.languageMode === "separate" || saved.languageMode === "aligned") setLanguageMode(saved.languageMode);
       if (saved.targetApp && TARGET_APPS.some((item) => item.value === saved.targetApp)) setTargetApp(saved.targetApp);
@@ -441,7 +450,7 @@ export default function Home() {
   function toggleLanguage(language: LyricLanguage) {
     setLanguages((current) => {
       if (current.includes(language)) return current.length === 1 ? current : current.filter((item) => item !== language);
-      return LANGUAGE_OPTIONS.map((item) => item.value).filter((item) => [...current, language].includes(item));
+      return normalizeLanguageOrder([...current, language]);
     });
     setGenerated("");
   }
@@ -474,7 +483,7 @@ export default function Home() {
         <div className="hero-copy">
           <p className="eyebrow">西班牙语教材 → 歌词创作提示词</p>
           <h1>把课堂句型，<br />变成会唱的西语。</h1>
-          <p className="hero-description">上传课程笔记，提取真正值得记忆的关键词与句型，再生成单语言、多套语言或逐句对照的歌词任务书。</p>
+          <p className="hero-description">上传课程笔记，提取真正值得记忆的关键词与句型，再生成单语言、首选语言翻译版或逐句对照的歌词任务书。</p>
         </div>
         <div className="hero-card" aria-label="使用流程">
           <span className="mini-label">4 步完成</span>
@@ -582,19 +591,23 @@ export default function Home() {
                   <label className={languages.includes(item.value) ? "selected" : ""} key={item.value}>
                     <input type="checkbox" checked={languages.includes(item.value)} onChange={() => toggleLanguage(item.value)} />
                     <span><b>{item.label}</b><small>{item.native}</small></span>
-                    <i aria-hidden="true">{languages.includes(item.value) ? "✓" : "+"}</i>
+                    <i aria-hidden="true">{languages.includes(item.value) ? languages.indexOf(item.value) + 1 : "+"}</i>
                   </label>
                 ))}
               </div>
+              <p className="language-order-note">
+                <span><b>生成顺序</b>{languages.map((language) => LANGUAGE_OPTIONS.find((item) => item.value === language)?.label).join(" → ")}</span>
+                {languages.length > 1 && <small>第 1 种为原创主语言；中文固定最后</small>}
+              </p>
             </fieldset>
 
             <div className="field-grid compact-controls">
               <label>多语言编排
                 <select value={languageMode} onChange={(event) => setLanguageMode(event.target.value as "separate" | "aligned")} disabled={languages.length === 1}>
-                  <option value="separate">分别生成多套（每种语言一首）</option>
+                  <option value="separate">首选语言原创 + 依次翻译</option>
                   <option value="aligned">逐句多语言对照</option>
                 </select>
-                <small>{languages.length === 1 ? "选择两种以上语言后生效" : `当前已选择 ${languages.length} 种语言`}</small>
+                <small>{languages.length === 1 ? "选择两种以上语言后生效" : "先创作第 1 种语言，再忠实翻译其余版本"}</small>
               </label>
               <label>歌曲创作应用
                 <select value={targetApp} onChange={(event) => setTargetApp(event.target.value as TargetApp)}>
