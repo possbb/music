@@ -105,7 +105,8 @@ type SavedPreferences = {
   extractionLanguages: ExtractionLanguage[];
   topic: string;
   customTopic: string;
-  style: string;
+  styles: string[];
+  style?: string;
   mood: string;
   level: string;
   length: string;
@@ -256,7 +257,7 @@ async function readMaterial(file: File) {
 export function buildPrompt(options: {
   topic: string;
   customTopic: string;
-  style: string;
+  styles: readonly string[];
   mood: string;
   level: string;
   length: string;
@@ -281,6 +282,10 @@ export function buildPrompt(options: {
   const requiredKeywordCount = options.keywords.length ? Math.max(1, Math.ceil(options.keywords.length * options.vocabularyRatio / 100)) : 0;
   const requiredPatternCount = patternItems.length ? Math.max(1, Math.ceil(patternItems.length * options.vocabularyRatio / 100)) : 0;
   const vocabularyLabel = VOCABULARY_OPTIONS.find((item) => item.value === options.vocabularyRatio)?.label;
+  const styleDescription = options.styles.join(" + ");
+  const styleInstruction = options.styles.length > 1
+    ? `将“${options.styles.join("、")}”融合为统一曲风，不要分别创作多首歌；以第一个风格为主体，其余风格作为编曲元素自然加入。`
+    : `使用“${styleDescription}”作为统一的编曲与歌词风格。`;
   const tempoOption = TEMPO_OPTIONS.find((item) => item.value === options.tempo) ?? TEMPO_OPTIONS[1];
   const chorusInstruction = options.length.includes("副歌完整重复 3 次")
     ? "副歌必须在整首歌中完整出现 3 次，每次保持相同的核心歌词和句型；最后一次可增强编曲与情绪，但不要改写副歌结构。"
@@ -307,7 +312,7 @@ export function buildPrompt(options: {
 【创作目标】
 - 目标歌曲应用：${targetName}
 - 歌词主题：${topic}
-- 编曲/歌词风格：${options.style}
+- 编曲/歌词风格：${styleDescription}
 - 情绪：${options.mood}
 - 歌词语言：${languageNames.join("、")}
 - 多语言编排：${orderedLanguages.length === 1 ? "单语言歌词" : options.languageMode === "separate" ? "首选语言原创，其他语言依次翻译" : "一套歌词逐句多语言对照"}
@@ -330,16 +335,17 @@ ${patterns || "- 请围绕主题使用适合初学者的西班牙语完整句子
 - 西班牙语版本优先使用教材原词；中文或英文版本使用相同教材概念的自然对应表达，不要强行夹入西班牙语。
 
 【写作要求】
-1. ${languageInstruction}
-2. 除目标应用需要的标题、音乐风格提示、版本标题和歌曲段落标记外，不要解释或添加创作说明；歌词不得混入未选择的语言。
-3. 使用 [Intro]、[Verse 1]、[Pre-Chorus]、[Chorus]、[Verse 2]、[Bridge]、[Final Chorus] 标记结构；不需要的段落可省略。
-4. ${chorusInstruction}
-5. 主歌要有连贯情境，不要把教材词汇机械罗列成清单。
-6. 教材中的问句尽量配上自然回答；所有语言的语法和表达必须正确、自然。
-7. 每行尽量简短，适合演唱与清楚发音；不同语言的对应行长度尽量接近。
-8. 可以押韵，但不能为了押韵使用超出 ${options.level} 太多的生僻词。
-9. 不要写歌手姓名或模仿具体在世艺人的风格。
-${options.requirements.trim() ? `10. 额外要求：${options.requirements.trim()}` : ""}
+1. ${styleInstruction}
+2. ${languageInstruction}
+3. 除目标应用需要的标题、音乐风格提示、版本标题和歌曲段落标记外，不要解释或添加创作说明；歌词不得混入未选择的语言。
+4. 使用 [Intro]、[Verse 1]、[Pre-Chorus]、[Chorus]、[Verse 2]、[Bridge]、[Final Chorus] 标记结构；不需要的段落可省略。
+5. ${chorusInstruction}
+6. 主歌要有连贯情境，不要把教材词汇机械罗列成清单。
+7. 教材中的问句尽量配上自然回答；所有语言的语法和表达必须正确、自然。
+8. 每行尽量简短，适合演唱与清楚发音；不同语言的对应行长度尽量接近。
+9. 可以押韵，但不能为了押韵使用超出 ${options.level} 太多的生僻词。
+10. 不要写歌手姓名或模仿具体在世艺人的风格。
+${options.requirements.trim() ? `11. 额外要求：${options.requirements.trim()}` : ""}
 
 【Markdown 输出要求】
 - 整份回答必须使用 Markdown，不要添加开场白、结尾说明或表格。
@@ -365,7 +371,7 @@ export default function Home() {
   const [isDragging, setIsDragging] = useState(false);
   const [topic, setTopic] = useState("自我介绍");
   const [customTopic, setCustomTopic] = useState("");
-  const [style, setStyle] = useState("清新流行");
+  const [styles, setStyles] = useState<string[]>(["清新流行"]);
   const [mood, setMood] = useState("温暖、轻快、有希望");
   const [level, setLevel] = useState("A1 入门");
   const [length, setLength] = useState("约 2 分钟（2 段主歌 + 重复副歌）");
@@ -394,7 +400,12 @@ export default function Home() {
       }
       if (typeof saved.topic === "string" && TOPICS.includes(saved.topic)) setTopic(saved.topic);
       if (typeof saved.customTopic === "string") setCustomTopic(saved.customTopic);
-      if (typeof saved.style === "string" && SONG_STYLES.some((item) => item.value === saved.style)) setStyle(saved.style);
+      if (Array.isArray(saved.styles)) {
+        const validStyles = saved.styles.filter((style) => SONG_STYLES.some((item) => item.value === style));
+        if (validStyles.length) setStyles([...new Set(validStyles)]);
+      } else if (typeof saved.style === "string" && SONG_STYLES.some((item) => item.value === saved.style)) {
+        setStyles([saved.style]);
+      }
       if (typeof saved.mood === "string") setMood(saved.mood);
       if (typeof saved.level === "string" && ["A1 入门", "A2 初级", "B1 中级"].includes(saved.level)) setLevel(saved.level);
       if (typeof saved.length === "string" && LENGTH_OPTIONS.includes(saved.length)) setLength(saved.length);
@@ -422,7 +433,7 @@ export default function Home() {
       extractionLanguages,
       topic,
       customTopic,
-      style,
+      styles,
       mood,
       level,
       length,
@@ -439,7 +450,7 @@ export default function Home() {
     } catch {
       // Private browsing or storage restrictions should not block the app.
     }
-  }, [preferencesReady, extractionScope, extractionLanguages, topic, customTopic, style, mood, level, length, tempo, languages, languageMode, targetApp, customApp, vocabularyRatio, requirements]);
+  }, [preferencesReady, extractionScope, extractionLanguages, topic, customTopic, styles, mood, level, length, tempo, languages, languageMode, targetApp, customApp, vocabularyRatio, requirements]);
 
   const activeExtractionOption = EXTRACTION_OPTIONS.find((item) => item.value === extractionScope) ?? EXTRACTION_OPTIONS[1];
 
@@ -472,6 +483,14 @@ export default function Home() {
     if (nextLanguages === extractionLanguages) return;
     setExtractionLanguages(nextLanguages);
     analyze([sourceText, manualText].filter(Boolean).join("\n"), extractionScope, nextLanguages);
+  }
+
+  function toggleStyle(style: string) {
+    setStyles((current) => {
+      if (current.includes(style)) return current.length === 1 ? current : current.filter((item) => item !== style);
+      return [...current, style];
+    });
+    setGenerated("");
   }
 
   async function handleFiles(selected: File[]) {
@@ -522,7 +541,7 @@ export default function Home() {
   }
 
   function generate() {
-    const prompt = buildPrompt({ topic, customTopic, style, mood, level, length, tempo, languages, languageMode, targetApp, customApp, vocabularyRatio, keywords, patterns, requirements });
+    const prompt = buildPrompt({ topic, customTopic, styles, mood, level, length, tempo, languages, languageMode, targetApp, customApp, vocabularyRatio, keywords, patterns, requirements });
     setGenerated(prompt);
     setCopied(false);
     window.setTimeout(() => outputRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 80);
@@ -714,13 +733,14 @@ export default function Home() {
             {topic === "自定义主题" && <label className="full-field">自定义主题<input value={customTopic} onChange={(event) => setCustomTopic(event.target.value)} placeholder="例如：第一次在巴塞罗那问路" /></label>}
 
             <fieldset>
-              <legend>编制风格</legend>
+              <legend className="style-legend">编制风格 <span>至少保留一种，可多选</span></legend>
               <div className="style-grid">
                 {SONG_STYLES.map((item) => (
-                  <label className={`style-option ${style === item.value ? "selected" : ""}`} key={item.value}>
-                    <input type="radio" name="style" value={item.value} checked={style === item.value} onChange={() => setStyle(item.value)} />
+                  <label className={`style-option ${styles.includes(item.value) ? "selected" : ""}`} key={item.value}>
+                    <input type="checkbox" value={item.value} checked={styles.includes(item.value)} onChange={() => toggleStyle(item.value)} />
                     <i className={item.color} aria-hidden="true" />
                     <span><b>{item.value}</b><small>{item.detail}</small></span>
+                    <em aria-hidden="true">{styles.includes(item.value) ? "✓" : "+"}</em>
                   </label>
                 ))}
               </div>

@@ -141,3 +141,16 @@ test("offers electronic music and a three-chorus song plan", async () => {
   assert.match(pageSource, /options\.length\.includes\("副歌完整重复 3 次"\)/);
   assert.match(pageSource, /副歌必须在整首歌中完整出现 3 次/);
 });
+
+test("allows multiple arrangement styles and migrates the old single choice", async () => {
+  const pageSource = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
+  assert.match(pageSource, /useState<string\[]>\(\["清新流行"\]\)/);
+  assert.match(pageSource, /<input type="checkbox" value=\{item\.value\}/);
+  assert.match(pageSource, /function toggleStyle\(style: string\)/);
+  assert.match(pageSource, /current\.length === 1 \? current : current\.filter/);
+  assert.match(pageSource, /Array\.isArray\(saved\.styles\)/);
+  assert.match(pageSource, /typeof saved\.style === "string"/);
+  assert.match(pageSource, /options\.styles\.join\(" \+ "\)/);
+  assert.match(pageSource, /融合为统一曲风，不要分别创作多首歌/);
+  assert.doesNotMatch(pageSource, /type="radio" name="style"/);
+});

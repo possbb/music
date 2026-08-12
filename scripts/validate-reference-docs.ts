@@ -26,7 +26,7 @@ const combinedPatterns = extractPatterns(combined);
 const prompt = buildPrompt({
   topic: "自我介绍",
   customTopic: "",
-  style: "清新流行",
+  styles: ["清新流行"],
   mood: "温暖、轻快、有希望",
   level: "A1 入门",
   length: "约 2 分钟（2 段主歌 + 重复副歌）",
@@ -56,7 +56,7 @@ assert.match(prompt, /至少自然使用 40 个上方关键词和 24 个教材�
 const separatePrompt = buildPrompt({
   topic: "友情",
   customTopic: "",
-  style: "故事民谣",
+  styles: ["故事民谣"],
   mood: "温暖",
   level: "A2 初级",
   length: "约 3 分钟（完整叙事结构）",

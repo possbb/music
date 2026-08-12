@@ -165,7 +165,9 @@ select:disabled { opacity: .55; cursor: not-allowed; }
 fieldset { margin: 22px 0 0; padding: 0; border: 0; }
 legend { margin-bottom: 9px; color: #cfdaea; font-size: 10px; font-weight: 750; }
 .style-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-.style-option { position: relative; display: grid; grid-template-columns: 9px 1fr; gap: 9px; align-items: start; min-height: 58px; padding: 11px; border: 1px solid rgba(255,255,255,.12); border-radius: 11px; background: rgba(255,255,255,.035); cursor: pointer; transition: .15s ease; }
+.style-legend { width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.style-legend span { color: #8fa0b7; font-size: 9px; font-weight: 550; }
+.style-option { position: relative; display: grid; grid-template-columns: 9px 1fr 18px; gap: 9px; align-items: start; min-height: 58px; padding: 11px; border: 1px solid rgba(255,255,255,.12); border-radius: 11px; background: rgba(255,255,255,.035); cursor: pointer; transition: .15s ease; }
 .style-option:hover { background: rgba(255,255,255,.075); }
 .style-option.selected { border-color: rgba(255,191,166,.76); background: rgba(238,104,70,.14); box-shadow: inset 0 0 0 1px rgba(238,104,70,.18); }
 .style-option input { position: absolute; opacity: 0; }
@@ -174,6 +176,8 @@ legend { margin-bottom: 9px; color: #cfdaea; font-size: 10px; font-weight: 750; 
 .style-option i.sky { background: #87cbed; } .style-option i.violet { background: #ae9aed; } .style-option i.blue { background: #779de5; } .style-option i.orange { background: #f08045; } .style-option i.neon { background: #59e0d0; }
 .style-option b { display: block; color: white; font-size: 11px; }
 .style-option small { display: block; margin-top: 3px; color: #9fafc3; font-size: 9px; line-height: 1.35; font-weight: 500; }
+.style-option em { display: grid; place-items: center; width: 18px; height: 18px; border: 1px solid rgba(255,255,255,.18); border-radius: 50%; color: #aab8ca; font-size: 9px; font-style: normal; }
+.style-option.selected em { border-color: var(--accent); color: white; background: var(--accent); }
 .primary-button { width: 100%; margin-top: 21px; padding: 14px 17px; border: 0; border-radius: 12px; display: flex; align-items: center; justify-content: space-between; color: white; background: var(--accent); font-weight: 800; font-size: 12px; cursor: pointer; box-shadow: 0 8px 22px rgba(238,104,70,.23); }
 .primary-button:hover { background: #f07656; transform: translateY(-1px); }
 .primary-button:disabled { background: #5e6c80; box-shadow: none; cursor: not-allowed; transform: none; }
