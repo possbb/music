@@ -143,6 +143,14 @@ test("offers electronic music and a three-chorus song plan", async () => {
   assert.match(pageSource, /副歌必须在整首歌中完整出现 3 次/);
 });
 
+test("requires naturally rhyming choruses in every lyric language", async () => {
+  const pageSource = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
+  assert.match(pageSource, /每种语言的副歌都必须自然押韵/);
+  assert.match(pageSource, /保持统一、清楚、易听辨的尾韵/);
+  assert.match(pageSource, /不改变原意、不增删歌词行/);
+  assert.match(pageSource, /不能为了押韵使用[\s\S]*?错误语法或生硬表达/);
+});
+
 test("allows multiple arrangement styles and migrates the old single choice", async () => {
   const pageSource = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
   assert.match(pageSource, /useState<string\[]>\(\["清新流行"\]\)/);
