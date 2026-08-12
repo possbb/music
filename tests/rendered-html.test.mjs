@@ -46,6 +46,8 @@ test("renders the Spanish lyric prompt workspace", async () => {
   assert.match(html, /4 分钟/);
   assert.match(html, /5 分钟/);
   assert.match(html, /6 分钟/);
+  assert.match(html, /电子音乐/);
+  assert.match(html, /副歌完整重复 3 次/);
   assert.match(html, /复制给大模型/);
   assert.doesNotMatch(html, /codex-preview|react-loading-skeleton|Your site is taking shape/i);
 });
@@ -130,4 +132,12 @@ test("offers a remembered slow, medium, or fast song tempo", async () => {
   assert.match(pageSource, /useState<SongTempo>\("medium"\)/);
   assert.match(pageSource, /tempo: SongTempo/);
   assert.match(pageSource, /歌曲速度：\$\{tempoOption\.label\}/);
+});
+
+test("offers electronic music and a three-chorus song plan", async () => {
+  const pageSource = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
+  assert.match(pageSource, /value: "电子音乐"[\s\S]*?合成器、电子鼓与层次推进/);
+  assert.match(pageSource, /约 3–4 分钟（3 段主歌 \+ 副歌完整重复 3 次）/);
+  assert.match(pageSource, /options\.length\.includes\("副歌完整重复 3 次"\)/);
+  assert.match(pageSource, /副歌必须在整首歌中完整出现 3 次/);
 });

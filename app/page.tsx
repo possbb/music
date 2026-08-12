@@ -67,6 +67,7 @@ const SONG_STYLES = [
   { value: "说唱节奏", detail: "短句押韵，适合数字与词汇", color: "violet" },
   { value: "电影叙事", detail: "画面感强，主歌层层推进", color: "blue" },
   { value: "摇滚励志", detail: "有力量的副歌与成长主题", color: "orange" },
+  { value: "电子音乐", detail: "合成器、电子鼓与层次推进", color: "neon" },
 ] as const;
 
 const TOPICS = [
@@ -83,6 +84,7 @@ const LENGTH_OPTIONS = [
   "约 1 分钟（短歌 + 循环副歌）",
   "约 2 分钟（2 段主歌 + 重复副歌）",
   "约 3 分钟（完整叙事结构）",
+  "约 3–4 分钟（3 段主歌 + 副歌完整重复 3 次）",
   "约 4 分钟（3 段主歌 + 桥段 + 完整副歌）",
   "约 5 分钟（长篇故事 + 多次副歌变化）",
   "约 6 分钟（多章节长歌 + 完整起承转合）",
@@ -280,6 +282,9 @@ export function buildPrompt(options: {
   const requiredPatternCount = patternItems.length ? Math.max(1, Math.ceil(patternItems.length * options.vocabularyRatio / 100)) : 0;
   const vocabularyLabel = VOCABULARY_OPTIONS.find((item) => item.value === options.vocabularyRatio)?.label;
   const tempoOption = TEMPO_OPTIONS.find((item) => item.value === options.tempo) ?? TEMPO_OPTIONS[1];
+  const chorusInstruction = options.length.includes("副歌完整重复 3 次")
+    ? "副歌必须在整首歌中完整出现 3 次，每次保持相同的核心歌词和句型；最后一次可增强编曲与情绪，但不要改写副歌结构。"
+    : "副歌要简单、朗朗上口，并重复 2—4 个核心句型帮助记忆。";
   const orderedLanguages = normalizeLanguageOrder(options.languages);
   const languageNames = orderedLanguages.map((language) => LANGUAGE_OPTIONS.find((item) => item.value === language)?.label).filter(Boolean);
   const languageOrder = orderedLanguages.map((language) => ({ es: "ES", zh: "中文", en: "EN" })[language]).join(" → ");
@@ -328,7 +333,7 @@ ${patterns || "- 请围绕主题使用适合初学者的西班牙语完整句子
 1. ${languageInstruction}
 2. 除目标应用需要的标题、音乐风格提示、版本标题和歌曲段落标记外，不要解释或添加创作说明；歌词不得混入未选择的语言。
 3. 使用 [Intro]、[Verse 1]、[Pre-Chorus]、[Chorus]、[Verse 2]、[Bridge]、[Final Chorus] 标记结构；不需要的段落可省略。
-4. 副歌要简单、朗朗上口，并重复 2—4 个核心句型帮助记忆。
+4. ${chorusInstruction}
 5. 主歌要有连贯情境，不要把教材词汇机械罗列成清单。
 6. 教材中的问句尽量配上自然回答；所有语言的语法和表达必须正确、自然。
 7. 每行尽量简短，适合演唱与清楚发音；不同语言的对应行长度尽量接近。

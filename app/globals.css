@@ -171,7 +171,7 @@ legend { margin-bottom: 9px; color: #cfdaea; font-size: 10px; font-weight: 750; 
 .style-option input { position: absolute; opacity: 0; }
 .style-option i { width: 8px; height: 8px; margin-top: 3px; border-radius: 50%; background: #9edfc9; }
 .style-option i.rose { background: #f5a3ad; } .style-option i.sand { background: #e6c188; } .style-option i.sun { background: #ffd45f; }
-.style-option i.sky { background: #87cbed; } .style-option i.violet { background: #ae9aed; } .style-option i.blue { background: #779de5; } .style-option i.orange { background: #f08045; }
+.style-option i.sky { background: #87cbed; } .style-option i.violet { background: #ae9aed; } .style-option i.blue { background: #779de5; } .style-option i.orange { background: #f08045; } .style-option i.neon { background: #59e0d0; }
 .style-option b { display: block; color: white; font-size: 11px; }
 .style-option small { display: block; margin-top: 3px; color: #9fafc3; font-size: 9px; line-height: 1.35; font-weight: 500; }
 .primary-button { width: 100%; margin-top: 21px; padding: 14px 17px; border: 0; border-radius: 12px; display: flex; align-items: center; justify-content: space-between; color: white; background: var(--accent); font-weight: 800; font-size: 12px; cursor: pointer; box-shadow: 0 8px 22px rgba(238,104,70,.23); }
