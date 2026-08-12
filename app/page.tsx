@@ -37,6 +37,14 @@ export type VocabularyRatio = 20 | 50 | 80;
 
 export type ExtractionScope = "focused" | "expanded" | "broad" | "comprehensive";
 
+export type ExtractionLanguage = "es" | "en" | "zh";
+
+const EXTRACTION_LANGUAGE_OPTIONS: Array<{ value: ExtractionLanguage; label: string; native: string }> = [
+  { value: "es", label: "西班牙语", native: "Español" },
+  { value: "en", label: "英语", native: "English" },
+  { value: "zh", label: "中文", native: "中文" },
+];
+
 const EXTRACTION_OPTIONS: Array<{ value: ExtractionScope; label: string; detail: string; keywords: number; patterns: number }> = [
   { value: "focused", label: "重点", detail: "适合短教材", keywords: 40, patterns: 24 },
   { value: "expanded", label: "丰富", detail: "推荐使用", keywords: 80, patterns: 48 },
@@ -92,6 +100,7 @@ const PREFERENCE_STORAGE_KEY = "letralab:creative-options:v1";
 
 type SavedPreferences = {
   extractionScope: ExtractionScope;
+  extractionLanguages: ExtractionLanguage[];
   topic: string;
   customTopic: string;
   style: string;
@@ -107,11 +116,14 @@ type SavedPreferences = {
   requirements: string;
 };
 
-const STOP_WORDS = new Set(
-  `a al algo algunas algunos ante antes como con contra cual cuando de del desde donde dos el ella ellas ellos en entre era es esa ese eso esta estas este estos fue ha hay la las lo los más me mi mis mucha mucho muy no nos o otra para pero por porque que qué se si sin sobre son su sus te tu tus un una uno unas unos ya y yo tú usted ustedes él también cómo cuál dónde quién años english español clase notas alumnos alumnas respuesta pregunta ejemplo práctica recordar objetivo modelo fácil ayuda idea grupo frase palabra palabras número números ejercicio repaso tarea nota`.split(
-    " ",
-  ),
-);
+const STOP_WORDS: Record<ExtractionLanguage, Set<string>> = {
+  es: new Set(`a al algo algunas algunos ante antes como con contra cual cuando de del desde donde dos el ella ellas ellos en entre era es esa ese eso esta estas este estos fue ha hay la las lo los más me mi mis mucha mucho muy no nos o otra para pero por porque que qué se si sin sobre son su sus te tu tus un una uno unas unos ya y yo tú usted ustedes él también cómo cuál dónde quién años español clase notas alumnos alumnas respuesta pregunta ejemplo práctica recordar objetivo modelo fácil ayuda idea grupo frase palabra palabras número números ejercicio repaso tarea nota`.split(" ")),
+  en: new Set(`a an and are as at be been but by can could did do does for from had has have he her hers him his how i if in into is it its may me more most my no not of on one or our ours she so some than that the their theirs them then there these they this those to too two up us was we were what when where which who why will with would you your yours english class notes students answer question example practice remember objective model easy help idea group phrase word words number numbers exercise review task`.split(" ")),
+  zh: new Set(`的 了 是 我 你 他 她 它 我们 你们 他们 她们 这 那 一个 一种 和 与 或 在 有 也 都 很 更 最 不 没 就 要 会 能 可以 什么 怎么 为什么 哪个 哪里 谁 多少 中文 英语 西班牙语 课堂 笔记 学生 答案 问题 例子 练习 复习 任务`.split(" ")),
+};
+
+const SPANISH_HINTS = new Set(`hola gracias adiós buenos días tardes noches llamo llama soy eres somos son tengo tienes tiene tenemos quiero quieres quiere puedo puedes puede hablamos habla español china libro silla mesa mochila cuaderno bolígrafo trabajo familia amigos vida sueños dónde cómo cuál quién años por para pero porque también`.split(" "));
+const ENGLISH_HINTS = new Set(`hello thanks goodbye good morning afternoon night name called am are is have has want wants can speak speaks english chinese book chair table backpack notebook pen work family friends life dreams where how which who years because also`.split(" "));
 
 const SAMPLE_MATERIAL = `Hola, buenos días. ¿Cómo te llamas? Me llamo Carlos.
 ¿De dónde eres? Soy de China. ¿A qué te dedicas? Soy ingeniero.
@@ -126,7 +138,33 @@ function normalizeLine(value: string) {
   return value.replace(/[\t\u00a0]+/g, " ").replace(/\s+/g, " ").trim();
 }
 
-export function extractKeywords(text: string, limit = EXTRACTION_OPTIONS[1].keywords) {
+function splitContentSegments(text: string) {
+  return text
+    .split(/\r?\n|•|(?<=[.!?。！？])\s*(?=[A-ZÁÉÍÓÚÜÑ¿\u3400-\u9fff])/u)
+    .flatMap((line) => line.split(/\s*\|\s*/))
+    .map(normalizeLine)
+    .filter(Boolean);
+}
+
+function detectLatinLanguage(value: string): "es" | "en" {
+  const words = value.toLocaleLowerCase().match(/[a-záéíóúüñ]+/giu) ?? [];
+  let spanishScore = /[áéíóúüñ¿¡]/iu.test(value) ? 4 : 0;
+  let englishScore = 0;
+  for (const word of words) {
+    if (SPANISH_HINTS.has(word) || STOP_WORDS.es.has(word)) spanishScore += 1;
+    if (ENGLISH_HINTS.has(word) || STOP_WORDS.en.has(word)) englishScore += 1;
+  }
+  return englishScore > spanishScore ? "en" : "es";
+}
+
+function getChineseWords(value: string) {
+  const segmenter = new Intl.Segmenter("zh-CN", { granularity: "word" });
+  return [...segmenter.segment(value)]
+    .filter((item) => item.isWordLike && /[\u3400-\u9fff]/u.test(item.segment))
+    .map((item) => item.segment);
+}
+
+export function extractKeywords(text: string, limit = EXTRACTION_OPTIONS[1].keywords, languages: readonly ExtractionLanguage[] = ["es"]) {
   const counts = new Map<string, number>();
   const preferred = new Set([
     "llamo",
@@ -146,10 +184,22 @@ export function extractKeywords(text: string, limit = EXTRACTION_OPTIONS[1].keyw
     "adiós",
   ]);
 
-  const words = text.toLocaleLowerCase("es").match(/[a-záéíóúüñ]{2,}/giu) ?? [];
-  for (const word of words) {
-    if (STOP_WORDS.has(word) || /^\d+$/.test(word)) continue;
-    counts.set(word, (counts.get(word) ?? 0) + 1);
+  for (const segment of splitContentSegments(text)) {
+    if (languages.includes("zh")) {
+      for (const word of getChineseWords(segment)) {
+        if (STOP_WORDS.zh.has(word) || word.length < 2) continue;
+        counts.set(word, (counts.get(word) ?? 0) + 1);
+      }
+    }
+
+    const latinWords = segment.toLocaleLowerCase().match(/[a-záéíóúüñ]{2,}/giu) ?? [];
+    if (!latinWords.length) continue;
+    const language = detectLatinLanguage(segment);
+    if (!languages.includes(language)) continue;
+    for (const word of latinWords) {
+      if (STOP_WORDS[language].has(word)) continue;
+      counts.set(word, (counts.get(word) ?? 0) + 1);
+    }
   }
 
   return [...counts.entries()]
@@ -159,24 +209,25 @@ export function extractKeywords(text: string, limit = EXTRACTION_OPTIONS[1].keyw
     .map(({ word }) => word);
 }
 
-export function extractPatterns(text: string, limit = EXTRACTION_OPTIONS[1].patterns) {
-  const lines = text
-    .split(/\r?\n|•|(?<=[.!?])\s+(?=[A-ZÁÉÍÓÚÜÑ¿])/u)
-    .map(normalizeLine)
-    .flatMap((line) => line.split(/\s*\|\s*/).map(normalizeLine))
-    .filter(Boolean);
+export function extractPatterns(text: string, limit = EXTRACTION_OPTIONS[1].patterns, languages: readonly ExtractionLanguage[] = ["es"]) {
+  const lines = splitContentSegments(text);
 
   const ignored = /^(objetivo|para recordar|ejercicio|práctica|repaso|nota|grupo|número|español|english|中文|tema|uso|modelo|pregunta|respuesta)/i;
   const usefulVerb = /\b(me llamo|se llama|soy|eres|es|somos|son|estoy|est\u00e1s|est\u00e1|tengo|tienes|tiene|tenemos|trabajo|trabajas|trabaja|vivo|vives|vive|quiero|quieres|quiere|me gusta|te gusta|le gusta|hay|voy|vas|va|puedo|puedes|puede|podemos|necesito|necesitas|prefiero|prefieres|nos vemos|hasta luego)\b/i;
   const seen = new Set<string>();
 
   return lines
-    .filter((line) => line.length >= 8 && line.length <= 180)
-    .filter((line) => !/[\u3400-\u9fff]/u.test(line) && !ignored.test(line))
+    .filter((line) => line.length >= (/[\u3400-\u9fff]/u.test(line) ? 4 : 8) && line.length <= 180)
+    .filter((line) => {
+      const hasChinese = /[\u3400-\u9fff]/u.test(line);
+      const hasLatin = /[a-záéíóúüñ]/iu.test(line);
+      return (hasChinese && languages.includes("zh")) || (hasLatin && languages.includes(detectLatinLanguage(line)));
+    })
+    .filter((line) => !ignored.test(line))
     .map((line) => line.replace(/_{3,}/g, "[信息]").replace(/\s*=\s*[^/]+(?:\/.*)?$/u, ""))
     .map((line) => ({
       line,
-      key: line.toLocaleLowerCase("es").replace(/[^a-záéíóúüñ¿?]+/giu, " ").trim(),
+      key: line.toLocaleLowerCase("es").replace(/[^\p{L}\p{N}¿?]+/gu, " ").trim(),
       score: (line.includes("¿") ? 8 : 0) + (usefulVerb.test(line) ? 6 : 0) + (line.includes("[信息]") ? 2 : 0),
     }))
     .filter(({ key }) => key.length > 4 && !seen.has(key) && Boolean(seen.add(key)))
@@ -304,6 +355,7 @@ export default function Home() {
   const [keywords, setKeywords] = useState<string[]>([]);
   const [patterns, setPatterns] = useState("");
   const [extractionScope, setExtractionScope] = useState<ExtractionScope>("expanded");
+  const [extractionLanguages, setExtractionLanguages] = useState<ExtractionLanguage[]>(["es"]);
   const [isReading, setIsReading] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [topic, setTopic] = useState("自我介绍");
@@ -331,6 +383,10 @@ export default function Home() {
       if (!stored) return;
       const saved = JSON.parse(stored) as Partial<SavedPreferences>;
       if (saved.extractionScope && EXTRACTION_OPTIONS.some((item) => item.value === saved.extractionScope)) setExtractionScope(saved.extractionScope);
+      if (Array.isArray(saved.extractionLanguages)) {
+        const validExtractionLanguages = saved.extractionLanguages.filter((language): language is ExtractionLanguage => EXTRACTION_LANGUAGE_OPTIONS.some((item) => item.value === language));
+        if (validExtractionLanguages.length) setExtractionLanguages([...new Set(validExtractionLanguages)]);
+      }
       if (typeof saved.topic === "string" && TOPICS.includes(saved.topic)) setTopic(saved.topic);
       if (typeof saved.customTopic === "string") setCustomTopic(saved.customTopic);
       if (typeof saved.style === "string" && SONG_STYLES.some((item) => item.value === saved.style)) setStyle(saved.style);
@@ -358,6 +414,7 @@ export default function Home() {
     if (!preferencesReady) return;
     const preferences: SavedPreferences = {
       extractionScope,
+      extractionLanguages,
       topic,
       customTopic,
       style,
@@ -377,7 +434,7 @@ export default function Home() {
     } catch {
       // Private browsing or storage restrictions should not block the app.
     }
-  }, [preferencesReady, extractionScope, topic, customTopic, style, mood, level, length, tempo, languages, languageMode, targetApp, customApp, vocabularyRatio, requirements]);
+  }, [preferencesReady, extractionScope, extractionLanguages, topic, customTopic, style, mood, level, length, tempo, languages, languageMode, targetApp, customApp, vocabularyRatio, requirements]);
 
   const activeExtractionOption = EXTRACTION_OPTIONS.find((item) => item.value === extractionScope) ?? EXTRACTION_OPTIONS[1];
 
@@ -390,17 +447,26 @@ export default function Home() {
     [sourceText, manualText, keywords, patterns],
   );
 
-  function analyze(text: string, scope = extractionScope) {
+  function analyze(text: string, scope = extractionScope, selectedLanguages = extractionLanguages) {
     const clean = text.trim();
     const limits = EXTRACTION_OPTIONS.find((item) => item.value === scope) ?? EXTRACTION_OPTIONS[1];
-    setKeywords(extractKeywords(clean, limits.keywords));
-    setPatterns(extractPatterns(clean, limits.patterns).join("\n"));
+    setKeywords(extractKeywords(clean, limits.keywords, selectedLanguages));
+    setPatterns(extractPatterns(clean, limits.patterns, selectedLanguages).join("\n"));
     setGenerated("");
   }
 
   function changeExtractionScope(scope: ExtractionScope) {
     setExtractionScope(scope);
     analyze([sourceText, manualText].filter(Boolean).join("\n"), scope);
+  }
+
+  function toggleExtractionLanguage(language: ExtractionLanguage) {
+    const nextLanguages = extractionLanguages.includes(language)
+      ? extractionLanguages.length === 1 ? extractionLanguages : extractionLanguages.filter((item) => item !== language)
+      : [...extractionLanguages, language];
+    if (nextLanguages === extractionLanguages) return;
+    setExtractionLanguages(nextLanguages);
+    analyze([sourceText, manualText].filter(Boolean).join("\n"), extractionScope, nextLanguages);
   }
 
   async function handleFiles(selected: File[]) {
@@ -540,6 +606,19 @@ export default function Home() {
             <div className="panel-heading">
               <div><span className="step">02</span><h2>检查提取结果</h2></div>
               <div className="statline"><span>{stats.chars.toLocaleString()} 字符</span><span>{stats.keywordCount} 关键词</span><span>{stats.patternCount} 句型</span></div>
+            </div>
+
+            <div className="result-block extraction-language-level">
+              <div className="block-title"><h3>提取语言</h3><span>至少保留一种，可多选</span></div>
+              <div className="extraction-language-options">
+                {EXTRACTION_LANGUAGE_OPTIONS.map((item) => (
+                  <label className={extractionLanguages.includes(item.value) ? "selected" : ""} key={item.value}>
+                    <input type="checkbox" checked={extractionLanguages.includes(item.value)} onChange={() => toggleExtractionLanguage(item.value)} />
+                    <span><b>{item.label}</b><small>{item.native}</small></span>
+                    <i aria-hidden="true">{extractionLanguages.includes(item.value) ? "✓" : "+"}</i>
+                  </label>
+                ))}
+              </div>
             </div>
 
             <div className="result-block extraction-level">

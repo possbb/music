@@ -23,6 +23,8 @@ test("renders the Spanish lyric prompt workspace", async () => {
   assert.match(html, /把课堂句型/);
   assert.match(html, /加入教材/);
   assert.match(html, /检查提取结果/);
+  assert.match(html, /提取语言/);
+  assert.match(html, /英语/);
   assert.match(html, /设定创作方向/);
   assert.match(html, /歌词语言/);
   assert.match(html, /西班牙语/);
@@ -71,7 +73,16 @@ test("extracts a broader set of textbook terms and patterns", async () => {
   assert.match(pageSource, /"comprehensive"[\s\S]*?keywords: 160, patterns: 96/);
   assert.match(pageSource, /useState<ExtractionScope>\("expanded"\)/);
   assert.match(pageSource, /changeExtractionScope/);
-  assert.match(pageSource, /line\.length >= 8 && line\.length <= 180/);
+  assert.match(pageSource, /line\.length >= \(\/\[\\u3400-\\u9fff\]/);
+});
+
+test("remembers multilingual extraction choices", async () => {
+  const pageSource = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
+  assert.match(pageSource, /type ExtractionLanguage = "es" \| "en" \| "zh"/);
+  assert.match(pageSource, /useState<ExtractionLanguage\[]>\(\["es"\]\)/);
+  assert.match(pageSource, /extractionLanguages: ExtractionLanguage\[]/);
+  assert.match(pageSource, /toggleExtractionLanguage/);
+  assert.match(pageSource, /至少保留一种，可多选/);
 });
 
 test("places the prompt output beside the creative settings on wide screens", async () => {
