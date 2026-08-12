@@ -137,7 +137,8 @@ test("offers a remembered slow, medium, or fast song tempo", async () => {
 test("offers electronic music and a three-chorus song plan", async () => {
   const pageSource = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
   assert.match(pageSource, /value: "电子音乐"[\s\S]*?合成器、电子鼓与层次推进/);
-  assert.match(pageSource, /约 3–4 分钟（3 段主歌 \+ 副歌完整重复 3 次）/);
+  assert.match(pageSource, /THREE_CHORUS_LENGTH = "约 5–6 分钟（3 段主歌 \+ 副歌完整重复 3 次）"/);
+  assert.match(pageSource, /saved\.length === LEGACY_THREE_CHORUS_LENGTH[\s\S]*?setLength\(THREE_CHORUS_LENGTH\)/);
   assert.match(pageSource, /options\.length\.includes\("副歌完整重复 3 次"\)/);
   assert.match(pageSource, /副歌必须在整首歌中完整出现 3 次/);
 });

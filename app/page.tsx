@@ -80,13 +80,16 @@ const TOPICS = [
   "自定义主题",
 ];
 
+const THREE_CHORUS_LENGTH = "约 5–6 分钟（3 段主歌 + 副歌完整重复 3 次）";
+const LEGACY_THREE_CHORUS_LENGTH = "约 3–4 分钟（3 段主歌 + 副歌完整重复 3 次）";
+
 const LENGTH_OPTIONS = [
   "约 1 分钟（短歌 + 循环副歌）",
   "约 2 分钟（2 段主歌 + 重复副歌）",
   "约 3 分钟（完整叙事结构）",
-  "约 3–4 分钟（3 段主歌 + 副歌完整重复 3 次）",
   "约 4 分钟（3 段主歌 + 桥段 + 完整副歌）",
   "约 5 分钟（长篇故事 + 多次副歌变化）",
+  THREE_CHORUS_LENGTH,
   "约 6 分钟（多章节长歌 + 完整起承转合）",
 ];
 
@@ -408,7 +411,11 @@ export default function Home() {
       }
       if (typeof saved.mood === "string") setMood(saved.mood);
       if (typeof saved.level === "string" && ["A1 入门", "A2 初级", "B1 中级"].includes(saved.level)) setLevel(saved.level);
-      if (typeof saved.length === "string" && LENGTH_OPTIONS.includes(saved.length)) setLength(saved.length);
+      if (saved.length === LEGACY_THREE_CHORUS_LENGTH) {
+        setLength(THREE_CHORUS_LENGTH);
+      } else if (typeof saved.length === "string" && LENGTH_OPTIONS.includes(saved.length)) {
+        setLength(saved.length);
+      }
       if (saved.tempo && TEMPO_OPTIONS.some((item) => item.value === saved.tempo)) setTempo(saved.tempo);
       if (Array.isArray(saved.languages)) {
         const validLanguages = saved.languages.filter((language): language is LyricLanguage => LANGUAGE_OPTIONS.some((item) => item.value === language));
